@@ -16,10 +16,10 @@
 
 | #  | Task | Status | Definition of Done |
 |----|------|--------|-------------------|
-| 1.1 | Create project directory structure (`src/`, `tests/`, `config/`, `results/`, `assets/`, `notebooks/`) | Not Started | All directories exist; matches PLAN C4 code structure |
-| 1.2 | Initialize `pyproject.toml` with dependencies (`airllm`, `ollama`, `psutil`, `pytest`, `matplotlib`, `pandas`, `ruff`) | Not Started | `uv sync` succeeds; `uv.lock` generated |
-| 1.3 | Create `.env-example` with `HF_TOKEN` placeholder | Not Started | `.env-example` exists; `.env` in `.gitignore` |
-| 1.4 | Create `src/airllm_benchmark/__init__.py` with package metadata | Not Started | Package importable; version `1.00` |
+| 1.1 | Create project directory structure (`src/`, `tests/`, `config/`, `results/`, `assets/`, `notebooks/`) | ✅ Done | All directories exist; matches PLAN C4 code structure |
+| 1.2 | Initialize `pyproject.toml` with dependencies (`airllm`, `ollama`, `psutil`, `pytest`, `matplotlib`, `pandas`, `ruff`) | ✅ Done | `uv sync` succeeds; `uv.lock` generated |
+| 1.3 | Create `.env-example` with `HF_TOKEN` placeholder | ✅ Done | `.env-example` exists; `.env` in `.gitignore` |
+| 1.4 | Create `src/airllm_benchmark/__init__.py` with package metadata | ✅ Done | Package importable; version `1.00` |
 
 ---
 
