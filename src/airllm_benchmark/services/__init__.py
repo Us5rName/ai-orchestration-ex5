@@ -5,5 +5,11 @@ Visualizer service generates charts and tables via matplotlib/pandas.
 """
 
 from .metrics import MetricsCollector, MetricsRecord
+from .visualizer import VisualizationResult, Visualizer
 
-__all__ = ["MetricsCollector", "MetricsRecord"]
+__all__ = [
+    "MetricsCollector",
+    "MetricsRecord",
+    "VisualizationResult",
+    "Visualizer",
+]
