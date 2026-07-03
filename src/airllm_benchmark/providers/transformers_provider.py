@@ -86,7 +86,7 @@ class TransformersProvider(InferenceProvider):
         if max_tokens <= 0:
             raise ValueError("max_tokens must be positive")
 
-        inputs = self._tokenizer(prompt, return_tensors="pt")
+        inputs = self._tokenizer(prompt, return_tensors="pt").to(self._device)
         outputs = self._model.generate(**inputs, max_new_tokens=max_tokens)
         # Decode full output, then strip the original prompt.
         full_text = self._tokenizer.decode(outputs[0], skip_special_tokens=True)

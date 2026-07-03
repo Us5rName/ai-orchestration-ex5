@@ -41,9 +41,10 @@
 |----|------|---------|--------|-------------------|
 | 3.1 | Create `providers/__init__.py` | 1.1 | ✅ Done | Exports `InferenceProvider` protocol |
 | 3.2 | Implement `providers/base.py` — `InferenceProvider` protocol per [`INTERFACES.md`](INTERFACES.md) §2 | 3.1 | ✅ Done | Protocol defined; docstrings present |
-| 3.3 | Implement `providers/ollama_provider.py` — HTTP client for Ollama API | 3.2 | Not Started | Implements `InferenceProvider`; handles connection errors |
-| ⚠️ | | | | **Caution:** Ollama must be running locally. Test with mocked HTTP; real test requires Ollama service. |
-| 3.4 | Implement `providers/transformers_provider.py` — HuggingFace Transformers wrapper | 3.2 | ✅ Done | Implements `InferenceProvider`; supports `device` parameter |
+| 3.3 | Implement `providers/ollama_provider.py` — HTTP client for Ollama API | 3.2 | ~~Not Started~~ | **Removed** — transformers used as GPU provider instead |
+| 3.4 | Implement `providers/transformers_provider.py` — HuggingFace Transformers wrapper | 3.2 | ✅ Done | Implements `InferenceProvider`; supports `device` parameter (CPU and GPU) |
+| 3.4.1 | Verify GPU execution with real CUDA test | 3.4 | ✅ Done | RTX 4080 SUPER test: tiny model loads on cuda:0, generates text, unloads |
+| 3.4.2 | Verify CPU execution with real test | 3.4 | ✅ Done | CPU test: tiny model loads, generates text, unloads |
 | ⚠️ | | | | **Caution:** Transformers imports PyTorch. Test with mocked model to avoid downloading weights during unit tests. |
 | 3.5 | Implement `providers/llamacpp_provider.py` — llama.cpp Python bindings | 3.2 | Not Started | Implements `InferenceProvider` |
 | ⚠️ | | | | **Caution:** Each provider wraps a different runtime (HTTP, PyTorch, native bindings). Test isolation is critical — mock all external calls. |

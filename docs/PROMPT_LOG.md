@@ -522,3 +522,46 @@
 | `docs/TODO.md` | Complete | Tasks, integration plan, checkpoints |
 | `docs/PROMPT_LOG.md` | Complete | Session history, decisions |
 | `CLAUDE.md` | Updated | Project-specific rules |
+
+---
+
+## Entry 22 — Transformers as GPU Provider + Device Tests
+
+**Prompt:** "Change in plan - I want transformers as the gpu provider. implement transformers gpu provider according to the instructions in IMPLEMENTATION.md. you still have the cpu PoCs that can help you"
+
+**Context:** User changed plan to use transformers as GPU provider instead of ollama. The `transformers_provider.py` already existed from Phase 3 (Step 1-3 per IMPLEMENTATION.md). PoCs existed and were tested.
+
+**Decisions:**
+- Updated `config/experiment.json` to use `gpu_provider: "transformers"` with `device: "cuda"`
+- Removed ollama provider from plan (no longer needed as transformers serves both GPU and CPU)
+- Updated `docs/TODO.md` to reflect plan change
+- Fixed bug: tokenizer inputs were on CPU while model was on CUDA → added `.to(self._device)` in `generate()`
+- Added real device tests (`tests/unit/test_transformers_device.py`) for both CPU and GPU paths
+
+**Changes:**
+- `config/experiment.json` — gpu_provider → transformers, device → cuda
+- `src/airllm_benchmark/providers/transformers_provider.py` — fixed device mismatch bug
+- `docs/TODO.md` — marked ollama removed, added GPU/CPU verification tasks
+- `tests/unit/test_transformers_device.py` — new file with 4 real device tests (2 CPU + 2 GPU)
+
+**Validation:**
+- All 4 real device tests pass (CPU + GPU on RTX 4080 SUPER)
+- All 11 existing mocked unit tests still pass
+- ruff check = 0 violations
+- GPU verified: model loads on cuda:0, generates text, unloads
+- CPU verified: model loads on cpu, generates text, unloads
+
+---
+
+## Summary of Documents
+
+| Document | Status | Purpose |
+|----------|--------|--------|
+| `docs/PRD.md` | Complete | Requirements, goals, experiment design |
+| `docs/PLAN.md` | Complete | C4 architecture, ADRs, data flow |
+| `docs/CONFIG.md` | Complete | Config schemas, metrics record |
+| `docs/INTERFACES.md` | Complete | SDK API, provider/runner contracts |
+| `docs/IMPLEMENTATION.md` | Complete | Module implementation process (PoC → full module) |
+| `docs/TODO.md` | Complete | Tasks, integration plan, checkpoints |
+| `docs/PROMPT_LOG.md` | Complete | Session history, decisions |
+| `CLAUDE.md` | Updated | Project-specific rules |

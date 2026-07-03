@@ -11,10 +11,9 @@
   },
   "max_new_tokens": 32,
   "quantization": "4bit",
-  "gpu_provider": "ollama",
+  "gpu_provider": "transformers",
   "cpu_baseline_provider": "transformers",
   "provider_config": {
-    "ollama": { "base_url": "http://localhost:11434" },
-    "transformers": { "device": "cpu" }
+    "transformers": { "device": "cuda" }
   }
 }
