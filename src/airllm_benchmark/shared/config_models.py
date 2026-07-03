@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-CONFIG_DIR = Path(__file__).resolve().parent.parent.parent / "config"
+CONFIG_DIR = Path(__file__).resolve().parent.parent.parent.parent / "config"
 
 REQUIRED_EXPERIMENT_KEYS = {
     "models",

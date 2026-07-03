@@ -331,6 +331,43 @@
 
 ---
 
+## Entry 17 — Config Fixture Tests
+
+**Prompt:** "Real files exist in the config. Please put junk data in the hardware config and add tests to the config that use the actual files in new files"
+
+**Context:** Config module fully implemented but tests use `tmp_path` fixtures. No tests validate the actual config files on disk.
+
+**Changes:**
+- `config/hardware.json`: Populated with junk placeholder data (Intel i9, RTX 4090, 64GB RAM)
+- `src/airllm_benchmark/shared/config_models.py`: Fixed `CONFIG_DIR` path (was `src/config/`, now project root `config/`)
+- `tests/fixtures/config/`: New directory with fixture copies of experiment.json + hardware.json
+- `tests/unit/test_config_real_experiment.py`: 13 tests asserting actual experiment.json values
+- `tests/unit/test_config_real_hardware.py`: 10 tests asserting actual hardware.json values
+- `tests/unit/test_config_real_combined.py`: 5 tests for cross-config scenarios
+- All 43 tests pass (15 existing + 28 new), ruff = 0 violations
+
+**Prompt:** "The tests should check for the actual values"
+
+**Changes:** Rewrote fixture tests to assert concrete values (`small == "meta-llama/Llama-3.2-1B"`, `ram_gb == 64`, etc.) instead of generic checks (`non-empty`, `positive`).
+
+**Prompt:** "Now moves the files with the modified values to a new dir, and update the tests accordingly"
+
+**Changes:** Created `tests/fixtures/config/` with fixture copies. Updated tests to use `FIXTURES_CONFIG_DIR` constant. Tests independent of project's runtime `config/`.
+
+**Prompt:** "Can we load the test config without fixtures?"
+
+**Changes:** Removed `@pytest.fixture` decorators. Each test now calls `load_experiment(TEST_CONFIG_DIR)` directly. Simpler, self-contained tests.
+
+**Prompt:** "remove the word fixture from the commit message, as we don't use it anymore. should the test config directory also be changed in name?"
+
+**Changes:**
+- Renamed `tests/fixtures/` → `tests/config/` (no pytest fixtures used)
+- Renamed `FIXTURES_CONFIG_DIR` → `TEST_CONFIG_DIR` in all test files
+- Flattened nested directory structure (`tests/config/config/` → `tests/config/`)
+- Amended commit: `test: add config tests asserting actual values from tests/config/`
+
+---
+
 ## Summary of Documents
 
 | Document | Status | Purpose |
