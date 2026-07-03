@@ -27,11 +27,11 @@
 
 | #  | Task | Depends | Status | Definition of Done |
 |----|------|---------|--------|-------------------|
-| 2.1 | Create `config/experiment.json` per [`CONFIG.md`](CONFIG.md) §2 | 1.1 | Not Started | Valid JSON; all required fields present |
-| 2.2 | Create `config/hardware.json` per [`CONFIG.md`](CONFIG.md) §3 | 1.1 | Not Started | Valid JSON; all fields empty (filled in Phase 8) |
-| 2.3 | Implement `shared/config.py` — loads both JSON files + `.env` | 2.1, 2.2 | Not Started | Returns typed config objects; aborts on empty hardware fields |
-| 2.4 | `tests/unit/test_config.py` — config loader tests | 2.3 | Not Started | Tests valid JSON, missing fields, empty hardware, env vars |
-| 2.5 | Implement `shared/version.py` — version `1.00` | 1.4 | Not Started | Importable; returns correct version string |
+| 2.1 | Create `config/experiment.json` per [`CONFIG.md`](CONFIG.md) §2 | 1.1 | ✅ Done | Valid JSON; all required fields present |
+| 2.2 | Create `config/hardware.json` per [`CONFIG.md`](CONFIG.md) §3 | 1.1 | ✅ Done | Valid JSON; all fields empty (filled in Phase 8) |
+| 2.3 | Implement `shared/config.py` — loads both JSON files + `.env` | 2.1, 2.2 | ✅ Done | Returns typed config objects; aborts on empty hardware fields |
+| 2.4 | `tests/unit/test_config.py` — config loader tests | 2.3 | ✅ Done | 15 tests: valid JSON, missing fields, empty hardware, env vars |
+| 2.5 | Implement `shared/version.py` — version `1.00` | 1.4 | ✅ Done | Importable; returns correct version string (done Phase 1) |
 
 ---
 

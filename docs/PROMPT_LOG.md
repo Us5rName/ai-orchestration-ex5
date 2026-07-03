@@ -232,6 +232,50 @@
 
 ---
 
+## Entry 13 — Phase 1 Scaffolding Commit
+
+**Prompt:** "commit and add to the prompt log. no phase 2"
+
+**Changes:**
+- Committed Phase 1 scaffolding: `feat: Phase 1 — project scaffolding` (f40f8bd)
+- Updated prompt log with Entry 13
+
+---
+
+## Entry 14 — Phase 2 Kickoff
+
+**Prompt:** "What is phase 2?"
+
+**Context:** Phase 1 committed. User wants to know what Phase 2 entails.
+
+**Response:** Explained Phase 2 — Configuration Layer (experiment.json, hardware.json, config.py, tests, version.py). Noted task 2.5 already done in Phase 1.
+
+---
+
+## Entry 15 — Phase 2 Implementation
+
+**Prompt:** "yes, start phase 2. implement like I thought you (skills also exist)"
+
+**Context:** User wants Phase 2 implemented following project skills (code-review-config, tdd-testing, modular-design).
+
+**Decision:** Follow TDD (RED → GREEN → REFACTOR) and skills:
+- Updated ruff config per code-review-config skill (added C4, SIM, ignore E501)
+- Created config files per CONFIG.md schemas
+- Wrote tests first (RED) — 15 tests covering all config loader functionality
+- Implemented shared/config.py (GREEN) — typed dataclasses, validation, no hardcoded values
+- Fixed ruff violations (unused imports, import ordering)
+- All 15 tests pass, ruff = 0 violations
+
+**Changes:**
+- `pyproject.toml`: Updated ruff lint rules (C4, SIM, ignore E501)
+- `config/experiment.json`: Created per CONFIG.md §2
+- `config/hardware.json`: Created per CONFIG.md §3 (empty, filled Phase 8)
+- `src/airllm_benchmark/shared/config.py`: ExperimentConfig, HardwareConfig, loaders, validators
+- `tests/unit/test_config.py`: 15 tests (TDD)
+- `docs/TODO.md`: Phase 2 marked ✅ Done
+
+---
+
 ## Entry 13 — Phase 1: Project Scaffolding
 
 **Prompt:** "According to PRD, plan, prd, and todo, what do you think will be the best first step?"
