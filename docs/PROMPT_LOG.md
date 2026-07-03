@@ -752,4 +752,29 @@
 
 ---
 
+## Entry 29 — Metrics Collector Tests (TODO 4.2)
+
+**Prompt:** "implement 4.2 according to what you were thaught and your skills" → "prompt log and commit"
+
+**Context:** Task 4.2 required metrics collector tests covering timing accuracy, memory sampling, and peak calculation with mocked psutil. Existing tests (`test_metrics_collector.py`, `test_metrics_record.py`) covered basic lifecycle but lacked timing accuracy, direct sampler testing, and edge cases.
+
+**Decisions:**
+- Split tests across 3 files to respect 150-line rule
+- `test_metrics_collector.py` — core lifecycle (existing, unchanged)
+- `test_metrics_sampler.py` — direct `RamSampler` + `VramTracker` tests (new)
+- `test_metrics_edge_cases.py` — timing accuracy, collector reuse, timeout edge cases (new)
+- All external deps (psutil, torch) mocked per project rules
+
+**Changes:**
+- Created `tests/unit/test_metrics_sampler.py` (117 lines, 5 tests)
+- Created `tests/unit/test_metrics_edge_cases.py` (91 lines, 3 tests)
+- Updated `docs/TODO.md` — marked 4.2 as ✅ Done
+
+**Validation:**
+- `uv run pytest tests/unit/test_metrics*.py` — 15/15 passed
+- `uv run ruff check` — 0 violations
+- All files ≤ 150 lines
+
+---
+
 ## Summary of Documents
