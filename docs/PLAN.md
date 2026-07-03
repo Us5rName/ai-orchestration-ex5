@@ -2,7 +2,7 @@
 
 | Metadata      | Value                                  |
 | ------------- | -------------------------------------- |
-| **Version**   | 1.00                                   |
+| **Version**   | 1.01                                   |
 | **Author**    | AI Orchestration Course — Exercise 5   |
 | **Created**   | 2026-07-03                             |
 | **Status**    | Draft — Awaiting Approval              |
@@ -224,6 +224,8 @@ See [`docs/INTERFACES.md`](INTERFACES.md) for the full contract:
 - `BenchmarkSDK` entry point (`sdk.py`)
 - `InferenceProvider` protocol (`providers/base.py`)
 - `InferenceRunner` protocol (`sdk/runner.py`)
+- `MetricsRecord` dataclass (`services/metrics.py`)
+- `MetricsCollector` protocol (`services/metrics.py`)
 
 ---
 

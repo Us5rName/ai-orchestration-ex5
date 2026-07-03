@@ -598,15 +598,57 @@
 
 ---
 
+## Entry 25 — Metrics Interface Discovery + Pre-Implementation Gate
+
+**Prompt:** "start phase 4.1. remember implementation.md and what you were taught"
+
+**Context:** Started Phase 4.1 (services/metrics.py). Followed IMPLEMENTATION.md PoC process. Discovered that `docs/INTERFACES.md` has no contract for the metrics service — only SDK, Provider, and Runner interfaces exist.
+
+**Problem discovered:**
+- Designed `MetricsCollector` API without a contract in INTERFACES.md
+- Continued implementing without notifying the user
+- Two failures: missing contract (design) + no notification (process)
+
+**Decisions:**
+- Created `docs/LESSON_INTERFACE_FIRST.md` documenting both failures
+- Added ⚠️ Pre-Implementation Gate to `docs/IMPLEMENTATION.md` — mandates checking INTERFACES.md before any implementation, stopping and notifying the user if a gap exists
+- Defined `MetricsRecord` dataclass (16 fields, frozen, matches CONFIG.md §1)
+- Defined `MetricsCollector` Protocol with context-at-start pattern: `start(context)`, `mark_load_complete()`, `stop()`, `get_record(results)` → eliminates parameter duplication with runner interface
+- Updated `docs/PLAN.md` §4 to reference new interfaces
+- Bumped all affected documents + version.py to 1.01
+- PoCs created but NOT committed (disposable per IMPLEMENTATION.md)
+
+**Changes:**
+- `docs/INTERFACES.md` — Added §4 MetricsRecord + §5 MetricsCollector (v1.01)
+- `docs/IMPLEMENTATION.md` — Added Pre-Implementation Gate section (v1.01)
+- `docs/PLAN.md` — Updated §4 API Contracts references (v1.01)
+- `docs/LESSON_INTERFACE_FIRST.md` — New lesson document
+- `src/airllm_benchmark/shared/version.py` — 1.00 → 1.01
+- `docs/PROMPT_LOG.md` — Entry 25 added
+
+**Not committed (PoCs, disposable per IMPLEMENTATION.md):**
+- `pocs/metrics_library_poc.py`
+- `pocs/metrics_feature_pocs.py`
+- `tests/pocs/test_metrics_library_poc.py`
+- `tests/pocs/test_metrics_feature_pocs.py`
+
+**Validation:**
+- All PoC tests pass (4 library + 15 feature = 19 total)
+- Interface eliminates duplication with InferenceRunner.run() parameters
+- All CONFIG.md §1 fields covered in MetricsRecord
+
+---
+
 ## Summary of Documents
 
 | Document | Status | Purpose |
 |----------|--------|--------|
 | `docs/PRD.md` | Complete | Requirements, goals, experiment design |
-| `docs/PLAN.md` | Complete | C4 architecture, ADRs, data flow |
+| `docs/PLAN.md` | Updated (1.01) | C4 architecture, ADRs, data flow |
 | `docs/CONFIG.md` | Complete | Config schemas, metrics record |
-| `docs/INTERFACES.md` | Complete | SDK API, provider/runner contracts |
-| `docs/IMPLEMENTATION.md` | Complete | Module implementation process (PoC → full module) |
+| `docs/INTERFACES.md` | Updated (1.01) | SDK, provider, runner, metrics contracts |
+| `docs/IMPLEMENTATION.md` | Updated (1.01) | PoC process + Pre-Implementation Gate |
 | `docs/TODO.md` | Complete | Tasks, integration plan, checkpoints |
-| `docs/PROMPT_LOG.md` | Complete | Session history, decisions |
+| `docs/PROMPT_LOG.md` | Updated | Session history, decisions |
+| `docs/LESSON_INTERFACE_FIRST.md` | New | Process lesson: interface-first + notification |
 | `CLAUDE.md` | Updated | Project-specific rules |

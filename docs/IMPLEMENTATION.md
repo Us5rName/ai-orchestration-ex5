@@ -2,10 +2,23 @@
 
 | Metadata      | Value                                  |
 | ------------- | -------------------------------------- |
-| **Version**   | 1.00                                   |
+| **Version**   | 1.01                                   |
 | **Based on**  | `docs/INTERFACES.md` v1.00             |
 
 > Every module is built through progressive proof-of-concepts before the final implementation. This ensures correctness, testability, and confidence in external dependencies.
+
+---
+
+## ⚠️ Pre-Implementation Gate
+
+**Before starting any implementation step, verify:**
+
+1. **Check `docs/INTERFACES.md`** — Does the module's interface exist and is it clear?
+2. **If the interface is missing, ambiguous, or incomplete** — **STOP.** Do not design or implement anything.
+3. **Notify the user.** Clearly state what is missing and wait for approval before proceeding.
+4. **Only continue** after the user has resolved the gap (by updating INTERFACES.md or providing explicit direction).
+
+> **No implementation before user approves.** This applies to all gaps: missing interfaces, unclear requirements, ambiguous specs, or anything that requires a design decision beyond what's documented.
 
 ---
 

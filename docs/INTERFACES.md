@@ -2,7 +2,7 @@
 
 | Metadata      | Value                                  |
 | ------------- | -------------------------------------- |
-| **Version**   | 1.00                                   |
+| **Version**   | 1.01                                   |
 | **Based on**  | `docs/PRD.md` v1.00, `docs/PLAN.md` v1.00 |
 
 ---
@@ -117,3 +117,89 @@ class InferenceRunner(Protocol):
 | `sdk/gpu_runner.py`     | GPU Runner       | Configured GPU provider   |
 | `sdk/cpu_runner.py`     | CPU Baseline Runner | Configured CPU provider |
 | `sdk/airllm_runner.py`  | AirLLM Runner    | AirLLM (builtin, no provider) |
+
+---
+
+## 4. Metrics Record — `services/metrics.py`
+
+Explicit return type for all metrics records. All fields match `docs/CONFIG.md` §1.
+
+```python
+@dataclass(frozen=True)
+class MetricsRecord:
+    """Single metrics record from one inference run."""
+
+    run_id: str
+    model: str
+    mode: str
+    provider: str
+    prompt: str
+    prompt_id: str
+    quantization: str
+    max_new_tokens: int
+    load_time_s: float
+    ttft_s: float
+    total_runtime_s: float
+    tokens_generated: int
+    peak_ram_mb: float
+    peak_vram_mb: float
+    status: str
+    error: str
+    timestamp: str
+```
+
+---
+
+## 5. Metrics Collector — `services/metrics.py`
+
+The MetricsCollector is used by runners to track timing and memory during inference. Context (model, prompt, etc.) is passed once at `start()`. Only results (tokens, status, error) are passed at `get_record()`.
+
+```python
+class MetricsCollector(Protocol):
+    """Interface for metrics collection during inference."""
+
+    def start(
+        self,
+        model_id: str,
+        mode: str,
+        provider: str,
+        prompt: str,
+        prompt_id: str,
+        quantization: str,
+        max_tokens: int,
+    ) -> None:
+        """Start timing and memory sampling. Store runner context.
+
+        Args:
+            model_id: HuggingFace model identifier.
+            mode: Inference mode (gpu_provider, cpu_baseline, airllm).
+            provider: Provider name (transformers, ollama, llamacpp).
+            prompt: Input prompt text.
+            prompt_id: Prompt identifier (P1, P2, P3).
+            quantization: Quantization level (4bit, 8bit, none).
+            max_tokens: Token generation limit.
+        """
+
+    def mark_load_complete(self) -> None:
+        """Mark model loading as complete. Captures load_time_s."""
+
+    def stop(self) -> None:
+        """Stop memory sampling and finalize timing."""
+
+    def get_record(
+        self,
+        tokens_generated: int,
+        status: str,
+        error: str = "",
+    ) -> MetricsRecord:
+        """Assemble metrics record from stored context + internal measurements + results.
+
+        Args:
+            tokens_generated: Number of tokens produced.
+            status: Run status (success, oom, timeout).
+            error: Error message if status != success.
+
+        Returns:
+            MetricsRecord matching CONFIG.md §1 schema.
+        """
+```
