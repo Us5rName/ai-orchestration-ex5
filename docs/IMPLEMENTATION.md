@@ -32,7 +32,7 @@ Write a minimal, standalone proof-of-concept for each external library needed th
 
 - **Goal:** Verify the library is available, importable, and functional.
 - **Scope:** The smallest possible script that exercises the core functionality (e.g., load a model, generate one sentence).
-- **Testing:** Must include a test that runs the PoC and asserts it produces valid output. **Always test against real data** — run the PoC on the actual machine with real hardware/resources (e.g. real GPU, real process memory); the point is to confirm the library works in the target environment.
+- **Testing:** Must include a test that runs the PoC and asserts it produces valid output. **Always test against real data** — run the PoC on the actual machine with real resources (e.g. real network, real filesystem, real hardware); the point is to confirm the library works in the target environment.
 
 ### Step 2 — Feature PoCs
 
@@ -91,7 +91,7 @@ Every step (PoC and final module) must obey the project rules from [`CLAUDE.md`]
 
 - **No PoC, no module.** Do not skip PoCs. They are the foundation of correct implementation.
 - **Every PoC is tested.** An untested PoC provides no confidence.
-- **PoCs always use real data.** Steps 1 and 2 (Library PoC + Feature PoCs) exercise the actual library against its real environment — real GPU, real memory, real API calls. This proves the library works before the module abstracts it away.
+- **PoCs always use real data.** Steps 1 and 2 (Library PoC + Feature PoCs) exercise the actual library against its real environment — real network, real filesystem, real hardware. This proves the library works before the module abstracts it away.
 - **PoCs inform implementation.** Use PoC results to design error handling, edge cases, and timeouts in the final module.
 - **PoC code is reused.** The actual code from PoCs becomes the foundation of the final module. Do not rewrite from scratch — adapt the proven PoC patterns by adding error handling, validation, and docstrings. The PoC files themselves are disposable and can be removed after the module is complete.
 
