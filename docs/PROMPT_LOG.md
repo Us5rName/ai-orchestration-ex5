@@ -656,6 +656,28 @@
 
 ---
 
+## Entry 34 — INCONSISTENCIES.md: Ollama References After GPU Provider Change
+
+**Prompt:** "Look at the prompt log, you will see that the gpu provider was changed to transformers. Please update inconcistensies.md" → "And update the version and add to the prompt log and commit"
+
+**Context:** Per Entry 22, the GPU provider was changed from ollama to transformers. `config/experiment.json` was updated, `ollama_provider.py` was removed, and TODO.md was updated. However, multiple documentation files still reference ollama as if it were an active provider.
+
+**Decisions:**
+- Added new inconsistency (#2) to `docs/INCONSISTENCIES.md` tracking all ollama references across 6 documents
+- Bumped version from 1.01 to 1.02
+- Documents affected: `CLAUDE.md`, `docs/CONFIG.md`, `docs/INTERFACES.md`, `docs/PLAN.md`, `docs/IMPLEMENTATION.md`
+
+**Changes:**
+- `docs/INCONSISTENCIES.md` — Added Entry #2: Ollama References (v1.02)
+- `src/airllm_benchmark/shared/version.py` — 1.01 → 1.02
+- `docs/PROMPT_LOG.md` — Entry 34 added
+
+**Validation:**
+- `uv run ruff check` → 0 violations
+- All files ≤ 150 lines
+
+---
+
 ## Summary of Documents
 
 | Document | Status | Purpose |
@@ -668,6 +690,7 @@
 | `docs/TODO.md` | Complete | Tasks, integration plan, checkpoints |
 | `docs/PROMPT_LOG.md` | Updated | Session history, decisions |
 | `docs/LESSON_INTERFACE_FIRST.md` | New | Process lesson: interface-first + notification |
+| `docs/INCONSISTENCIES.md` | Updated (1.02) | Track gaps between docs, interfaces, and TODO |
 | `CLAUDE.md` | Updated | Project-specific rules |
 
 ---

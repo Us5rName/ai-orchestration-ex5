@@ -2,7 +2,7 @@
 
 | Metadata      | Value                                  |
 | ------------- | -------------------------------------- |
-| **Version**   | 1.00                                   |
+| **Version**   | 1.02                                   |
 | **Created**   | 2026-07-04                             |
 | **Purpose**   | Track gaps between docs, interfaces, and TODO |
 
@@ -24,7 +24,21 @@
 
 ---
 
-## 2. TODO Summary Table — Outdated
+## 2. Ollama References — GPU Provider Changed to Transformers
+
+| Attribute | Detail |
+|-----------|--------|
+| **Found in** | `CLAUDE.md`, `docs/CONFIG.md`, `docs/INTERFACES.md`, `docs/PLAN.md`, `docs/IMPLEMENTATION.md` |
+| **Also in** | `CLAUDE.md` §3 (package layout lines 46-56, API gatekeeper lines 79-80, QA §5 lines 95-96), `docs/CONFIG.md` §2 (example config lines 50-57, field description lines 63-72), `docs/INTERFACES.md` §2 (provider implementations table lines 91-96), `docs/PLAN.md` §1.3 (C3 component diagram lines 95-99, lines 109-115), §1.4 (C4 code structure lines 134-138), §5 (ADR-003 lines 265-266), §6 (deployment lines 319-323), `docs/IMPLEMENTATION.md` (Example: Ollama Provider lines 55-64, Mandatory Standards lines 71-81) |
+| **Missing from** | `src/airllm_benchmark/providers/` (no `ollama_provider.py`) |
+| **Description** | Per PROMPT_LOG.md Entry 22, the GPU provider was changed from ollama to transformers. `config/experiment.json` was updated (`gpu_provider: "transformers"`), `ollama_provider.py` was removed, and TODO.md was updated. However, multiple documentation files still reference ollama as if it were an active provider: package layout diagrams, config examples, provider implementation tables, component diagrams, code structure diagrams, ADRs, deployment diagrams, and implementation examples. |
+| **Impact** | Medium — documentation is misleading; new contributors may assume ollama is still supported. |
+| **Resolution** | Update all affected documents to remove ollama references or mark ollama as "removed". Documents to update: `CLAUDE.md` (§3 package layout, §3 API Gatekeeper, §5 QA), `docs/CONFIG.md` (§2 example config and field descriptions), `docs/INTERFACES.md` (§2 provider implementations table), `docs/PLAN.md` (§1.3 C3, §1.4 C4, §5 ADR-003, §6 deployment), `docs/IMPLEMENTATION.md` (Example section, Mandatory Standards). |
+| **Status** | 🔲 Deferred
+
+---
+
+## 3. TODO Summary Table — Outdated
 
 | Attribute | Detail |
 |-----------|--------|
@@ -36,7 +50,7 @@
 
 ---
 
-## 3. SDK Return Types — Underspecified
+## 4. SDK Return Types — Underspecified
 
 | Attribute | Detail |
 |-----------|--------|
