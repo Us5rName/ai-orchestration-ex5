@@ -31,10 +31,10 @@ Write a separate PoC for **every feature** that will be exposed through the modu
 
 ### Step 3 — Full Module
 
-Using the lessons learned from the PoCs, build the complete module.
+Using the **actual code** from the PoCs as the foundation, build the complete module.
 
 - **Goal:** Deliver a production-quality module that satisfies its interface contract.
-- **Scope:** Full implementation with error handling, input validation, docstrings, and test coverage.
+- **Scope:** Reuse PoC code directly — add error handling, input validation, docstrings, and test coverage on top of the proven PoC patterns. Do not rewrite from scratch.
 - **Testing:** Unit tests for the module, all external dependencies mocked per project rules.
 
 ---
@@ -79,7 +79,7 @@ Every step (PoC and final module) must obey the project rules from [`CLAUDE.md`]
 - **No PoC, no module.** Do not skip PoCs. They are the foundation of correct implementation.
 - **Every PoC is tested.** An untested PoC provides no confidence.
 - **PoCs inform implementation.** Use PoC results to design error handling, edge cases, and timeouts in the final module.
-- **PoCs are disposable.** They do not need to survive in the codebase after the module is complete. Their purpose is learning and validation.
+- **PoC code is reused.** The actual code from PoCs becomes the foundation of the final module. Do not rewrite from scratch — adapt the proven PoC patterns by adding error handling, validation, and docstrings. The PoC files themselves are disposable and can be removed after the module is complete.
 
 ---
 
