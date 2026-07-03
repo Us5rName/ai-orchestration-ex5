@@ -306,6 +306,31 @@
 
 ---
 
+## Entry 16 — 150-Line Rule Enforcement
+
+**Prompt:** "There are files with more than 150 lines in tests and srd. fix them like I thought you and don't forget skills"
+
+**Context:** `config.py` (161 lines) and `test_config.py` (168 lines) exceeded the 150-line limit.
+
+**Decision:** Applied modular-design skill — separated data models from loading logic.
+
+**Changes:**
+- `config.py` (161→29): Thin re-export facade for backward compatibility
+- `config_models.py` (new, 79): `ExperimentConfig`, `HardwareConfig`, constants
+- `config_loader.py` (new, 98): `load_*`, `validate_*`, `get_hf_token`
+- `test_config.py` (168→deleted): Split into two focused test files
+- `test_config_models.py` (new, 83): Dataclass method tests
+- `test_config_loader.py` (new, 132): Loader/validation tests
+- All files <150 lines, ruff=0 violations, 15/15 tests pass
+
+**Prompt:** "commit and update the prompt log"
+
+**Changes:**
+- Committed: `refactor: split config.py into models + loader (150-line rule)` (73bbe1a)
+- Updated prompt log with Entry 16
+
+---
+
 ## Summary of Documents
 
 | Document | Status | Purpose |
