@@ -1,0 +1,20 @@
+{
+  "models": {
+    "small": { "id": "meta-llama/Llama-3.2-1B", "tier": "small" },
+    "medium": { "id": "Qwen/Qwen2.5-7B-Instruct", "tier": "medium" },
+    "large": { "id": "Qwen/Qwen2.5-72B-Instruct", "tier": "large" }
+  },
+  "prompts": {
+    "P1": "What is the capital of the United States?",
+    "P2": "Explain quantum entanglement in one paragraph.",
+    "P3": "Write a Python function that sorts a list."
+  },
+  "max_new_tokens": 32,
+  "quantization": "4bit",
+  "gpu_provider": "ollama",
+  "cpu_baseline_provider": "transformers",
+  "provider_config": {
+    "ollama": { "base_url": "http://localhost:11434" },
+    "transformers": { "device": "cpu" }
+  }
+}
