@@ -575,6 +575,29 @@
 
 ---
 
+## Entry 24 — Split test_providers.py (150-line rule)
+
+**Prompt:** "fix the 150 lines as you were taught and according to your skills"
+
+**Context:** `test_providers.py` was 168 lines, exceeding the CLAUDE.md 150-line limit. Split by concern following modular design principles.
+
+**Decisions:**
+- Split into two files by responsibility: protocol definition vs implementation behavior
+- `test_providers.py` — protocol definition + mock provider compliance (73 lines)
+- `test_provider_lifecycle.py` — TransformersProvider compliance + lifecycle tests (108 lines)
+
+**Changes:**
+- `tests/unit/test_providers.py` — reduced to 73 lines (protocol + mock tests only)
+- `tests/unit/test_provider_lifecycle.py` — new file with 108 lines (compliance + lifecycle)
+- `docs/PROMPT_LOG.md` — Entry 24 added
+
+**Validation:**
+- Both files under 150 lines
+- All 19 tests pass
+- ruff check = 0 violations
+
+---
+
 ## Summary of Documents
 
 | Document | Status | Purpose |
