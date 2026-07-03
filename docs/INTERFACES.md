@@ -23,7 +23,7 @@ class BenchmarkSDK:
         """
 
     def run_single(self, model_id: str, mode: str, prompt: str,
-                   provider: str | None = None) -> dict:
+                   provider: str | None = None) -> MetricsRecord:
         """Run a single inference and return metrics.
 
         Args:
@@ -33,7 +33,7 @@ class BenchmarkSDK:
             prompt: input text
 
         Returns:
-            dict matching Metrics Record schema (see docs/CONFIG.md)
+            MetricsRecord from this run.
         """
 
     def generate_visualization(self) -> list[str]:
@@ -96,7 +96,7 @@ class InferenceRunner(Protocol):
     """Interface for all inference runners."""
 
     def run(self, provider: InferenceProvider, model_id: str,
-            prompt: str, max_tokens: int) -> dict:
+            prompt: str, max_tokens: int) -> MetricsRecord:
         """Execute one inference run and return metrics.
 
         Args:
@@ -106,7 +106,7 @@ class InferenceRunner(Protocol):
             max_tokens: maximum tokens to generate
 
         Returns:
-            dict matching Metrics Record schema (see docs/CONFIG.md)
+            MetricsRecord from this run.
         """
 ```
 

@@ -639,6 +639,23 @@
 
 ---
 
+## Entry 26 — Update return types to MetricsRecord
+
+**Prompt:** "are there any other interfaces that are affected by the change?" → "Yes. and prompt log and commit"
+
+**Context:** After defining `MetricsRecord`, two interfaces still returned `dict` with docstring "matching Metrics Record schema" instead of using the explicit type.
+
+**Changes:**
+- `BenchmarkSDK.run_single()` — `-> dict` → `-> MetricsRecord`
+- `InferenceRunner.run()` — `-> dict` → `-> MetricsRecord`
+- `docs/PROMPT_LOG.md` — Entry 26 added
+
+**Validation:**
+- All interfaces now reference explicit types instead of vague "dict matching schema"
+- No interfaces use `dict` as return type for metrics data
+
+---
+
 ## Summary of Documents
 
 | Document | Status | Purpose |
