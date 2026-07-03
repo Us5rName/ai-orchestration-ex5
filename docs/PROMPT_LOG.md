@@ -232,6 +232,36 @@
 
 ---
 
+## Entry 13 — Phase 1: Project Scaffolding
+
+**Prompt:** "According to PRD, plan, prd, and todo, what do you think will be the best first step?"
+
+**Context:** All mandatory documents complete. No source code exists. User wants to begin implementation.
+
+**Decision:** Identified Phase 1 (Project Scaffolding) as the clear first step — nothing else can start without the foundation.
+
+**Prompt:** "Start with the project scaffolding. Remember to listen to interfaces.md"
+
+**Changes:**
+- Created full directory structure per PLAN C4 (src/airllm_benchmark/{sdk, providers, services, shared}, tests/{unit, integration}, config, results, assets, notebooks)
+- Updated `pyproject.toml` with all dependencies (airllm, ollama, psutil, matplotlib, pandas, pytest, ruff)
+- Created `.env-example` with `HF_TOKEN` placeholder
+- Created all `__init__.py` files with docstrings
+- Implemented `constants.py` with `BenchmarkMode`, `RunStatus`, `QuantizationLevel` (StrEnum per INTERFACES.md mode/status values)
+- Implemented `shared/version.py` (version `1.00`)
+- `uv sync`: 83 packages resolved, all installed
+- `ruff check src/`: 0 violations
+- Package import verified: `__version__ = "1.00"`, all enums importable
+- Updated `docs/TODO.md` — Phase 1 marked ✅ Done
+
+**Prompt:** "commit and add to the prompt log. no phase 2"
+
+**Changes:**
+- Committed to git: `feat: Phase 1 — project scaffolding` (f40f8bd)
+- Updated prompt log with this entry
+
+---
+
 ## Summary of Documents
 
 | Document | Status | Purpose |
