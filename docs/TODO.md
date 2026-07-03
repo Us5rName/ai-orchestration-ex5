@@ -58,7 +58,7 @@
 
 | #  | Task | Depends | Status | Definition of Done |
 |----|------|---------|--------|-------------------|
-| 4.1 | Implement `services/metrics.py` — timing + psutil memory sampling | 1.1 | Not Started | Records TTFT, total runtime, peak RAM; 1-second sampling interval |
+| 4.1 | Implement `services/metrics.py` — timing + psutil memory sampling | 1.1 | Done | Records TTFT, total runtime, peak RAM; 1-second sampling interval |
 | 4.2 | `tests/unit/test_metrics.py` — metrics collector tests | 4.1 | Not Started | Tests timing accuracy, memory sampling, peak calculation; mocked psutil |
 | 4.3 | POC: minimal metrics + visualization pipeline | 4.1, 4.3 | Not Started | End-to-end test: collect fake metrics → generate chart → verify PNG output |
 | 4.4 | Implement `services/visualizer.py` — chart + table generation | 4.3 | Not Started | Generates bar charts (latency, memory), comparison table; saves PNG to `assets/` |
@@ -228,7 +228,7 @@ When an integration checkpoint fails:
 | 1 — Scaffolding | 4 | 0/4 Done |
 | 2 — Configuration | 5 | 0/5 Done |
 | 3 — Providers | 7 | 0/7 Done |
-| 4 — Services | 5 | 0/5 Done |
+| 4 — Services | 5 | 1/5 Done |
 | 5 — SDK (Runners) | 9 | 0/9 Done |
 | 6 — CLI | 2 | 0/2 Done |
 | 7 — Pre-Benchmark | 4 | 0/4 Done |

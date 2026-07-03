@@ -669,3 +669,60 @@
 | `docs/PROMPT_LOG.md` | Updated | Session history, decisions |
 | `docs/LESSON_INTERFACE_FIRST.md` | New | Process lesson: interface-first + notification |
 | `CLAUDE.md` | Updated | Project-specific rules |
+
+---
+
+## Entry 27 — Phase 4.1: Metrics Service (PoCs → Full Module)
+
+**Prompt:** "start phase 4.1. remember implementation.md and what you were thaught, check gate" → "will you need just psutil? define the library for each thing" → "choose something agnostic. what about torch?" → "yes. each library gets its own poc. start with one library, 3 steps, real data and move on to the next" → "skip step 3 until the end" → "add to prompt log, divide to commmits and commit"
+
+**Context:** Implement `services/metrics.py` (Phase 4.1 per TODO.md). Pre-Implementation Gate passed — `MetricsRecord` (§4) and `MetricsCollector` (§5) interfaces exist in INTERFACES.md v1.01.
+
+**Library Mapping:**
+
+| Capability | Library | Reason |
+|---|---|---|
+| Timing (load time, TTFT, total runtime) | `time` (stdlib) | `time.perf_counter()` — no external dep |
+| RAM sampling (peak RAM in MB) | `psutil` | `psutil.Process().memory_info()` — 1s interval |
+| VRAM sampling (peak VRAM in MB) | `torch` | `torch.cuda.max_memory_allocated()` — already a dep, agnostic |
+| MetricsRecord (frozen dataclass) | `dataclasses` (stdlib) | `@dataclass(frozen=True)` — no external dep |
+
+**PoC Process (per IMPLEMENTATION.md):**
+
+| Library | Library PoC | Feature PoCs | Result |
+|---------|-------------|--------------|--------|
+| psutil | ✅ 15.08 MB RAM measured | ✅ 2/2 tests (sampling, peak detection) | Proven |
+| torch | ✅ CUDA available (RTX 4080 SUPER) | ✅ 3/3 tests (100 MB GPU alloc, reset, no-cuda) | Proven |
+
+**VRAM = 0 Question:** User asked why Library PoC showed 0 VRAM. Answer: `torch.cuda.max_memory_allocated()` tracks peak allocation by the current process. The PoC never allocates GPU tensors, so peak is 0. Feature PoC allocates real 100 MB tensor → non-zero peak. During actual benchmarks, the provider loads model weights onto CUDA → peak reflects real usage.
+
+**Decisions:**
+- torch chosen over GPUtil/nvidia-smi for VRAM — already a dependency, vendor-agnostic, no new deps
+- Split module into `metrics.py` (dataclass + collector) + `metrics_sampler.py` (RamSampler + VramTracker) to stay under 150-line limit
+- RamSampler uses daemon thread with 1-second interval (per TODO.md Definition of Done)
+- VramTracker is stateless (static methods) — torch.cuda manages peak tracking internally
+- All external deps mocked in unit tests (psutil, torch.cuda)
+
+**Changes:**
+- `src/airllm_benchmark/services/metrics.py` — MetricsRecord + MetricsCollector (140 lines)
+- `src/airllm_benchmark/services/metrics_sampler.py` — RamSampler + VramTracker (73 lines)
+- `src/airllm_benchmark/services/__init__.py` — Exports MetricsCollector, MetricsRecord
+- `tests/unit/test_metrics.py` — 6 unit tests (all mocked)
+- `pocs/psutil_library_poc.py` — psutil Library PoC
+- `pocs/psutil_feature_pocs.py` — psutil Feature PoCs
+- `pocs/torch_library_poc.py` — torch Library PoC
+- `pocs/torch_feature_pocs.py` — torch Feature PoCs
+- `tests/pocs/test_psutil_*.py` — psutil PoC tests
+- `tests/pocs/test_torch_*.py` — torch PoC tests
+- `docs/TODO.md` — 4.1 marked Done, summary updated
+
+**Validation:**
+- `uv run ruff check` — 0 violations
+- `uv run pytest tests/unit/test_metrics.py` — 6/6 passed
+- All files ≤ 150 lines
+- No hardcoded values
+- Module imports verified: all 17 MetricsRecord fields present
+
+---
+
+## Summary of Documents
