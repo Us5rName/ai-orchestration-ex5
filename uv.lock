@@ -57,6 +57,7 @@ dependencies = [
     { name = "ollama" },
     { name = "pandas" },
     { name = "psutil" },
+    { name = "ruff" },
 ]
 
 [package.optional-dependencies]
@@ -79,6 +80,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.0.0" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=4.1.0" },
     { name = "pytest-mock", marker = "extra == 'test'", specifier = ">=3.12.0" },
+    { name = "ruff", specifier = ">=0.15.20" },
     { name = "ruff", marker = "extra == 'lint'", specifier = ">=0.1.0" },
 ]
 provides-extras = ["test", "lint"]

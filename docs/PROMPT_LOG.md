@@ -723,6 +723,33 @@
 - No hardcoded values
 - Module imports verified: all 17 MetricsRecord fields present
 
+## Entry 28 — 150-Line Rule Enforcement (PoCs + Tests)
+
+**Prompt:** "There are some project files with more than 150 lines. split them like you were taught and according to your skills" → "touch the pocs as well"
+
+**Context:** The 150-line rule (CLAUDE.md §4) was not fully enforced. Three files exceeded the limit:
+- `pocs/metrics_feature_pocs.py` — 214 lines
+- `tests/pocs/test_metrics_feature_pocs.py` — 196 lines
+- `tests/unit/test_metrics.py` — 185 lines
+
+**Decisions:**
+- Split each file by single responsibility (one feature per file)
+- Updated all test imports to reference new module paths
+- Fixed pre-existing ruff violations discovered during split (B011 `assert False`, F401 unused import, W291/W293 whitespace)
+
+**Changes:**
+- `pocs/metrics_feature_pocs.py` → `metrics_timing_poc.py` (50), `metrics_sampling_poc.py` (72), `metrics_peak_poc.py` (51), `metrics_record_poc.py` (87)
+- `tests/pocs/test_metrics_feature_pocs.py` → `test_metrics_timing_poc.py` (41), `test_metrics_sampling_poc.py` (41), `test_metrics_peak_poc.py` (52), `test_metrics_record_poc.py` (102)
+- `tests/unit/test_metrics.py` → `test_metrics_record.py` (65), `test_metrics_collector.py` (127)
+- Fixed `assert False` → `raise AssertionError()` in `test_metrics_record.py`
+- Fixed unused `field` import in `metrics_library_poc.py`
+- Fixed trailing whitespace in `testing-airllm.py`
+
+**Validation:**
+- `uv run pytest tests/` — 116/116 passed
+- `uv run ruff check . --exclude .venv` — 0 violations
+- All files ≤ 150 lines (max: `services/metrics.py` at 140 lines)
+
 ---
 
 ## Summary of Documents

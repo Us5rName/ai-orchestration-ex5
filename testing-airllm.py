@@ -20,14 +20,14 @@ input_text = [
     ]
 
 input_tokens = model.tokenizer(input_text,
-    return_tensors="pt", 
-    return_attention_mask=False, 
-    truncation=True, 
-    max_length=MAX_LENGTH, 
+    return_tensors="pt",
+    return_attention_mask=False,
+    truncation=True,
+    max_length=MAX_LENGTH,
     padding=False)
-           
+
 generation_output = model.generate(
-    input_tokens['input_ids'].cuda(), 
+    input_tokens['input_ids'].cuda(),
     max_new_tokens=20,
     use_cache=True,
     return_dict_in_generate=True)
