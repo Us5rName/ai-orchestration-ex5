@@ -83,14 +83,20 @@ C4Component
 
     Boundary(sdk_boundary, "SDK Layer") {
         Component(sdk_entry, "SDK (sdk.py)", "Python", "Orchestrates benchmark pipeline")
-        Component(runner_mgr, "Runner Manager", "Python", "Selects and executes the correct inference runner")
-        Component(provider_runner, "Provider Runner", "Python", "GPU inference via configured provider (Ollama, Transformers, etc.)")
-        Component(cpu_runner, "CPU Baseline Runner", "Python", "Raw CPU inference — demonstrates OOM/slowness")
+        Component(runner_mgr, "Runner Manager", "Python", "Dispatches runs to correct runner + provider")
+        Component(gpu_runner, "GPU Runner", "Python", "Delegates to configured GPU provider")
+        Component(cpu_runner, "CPU Baseline Runner", "Python", "Delegates to configured CPU provider — no paging")
         Component(airllm_runner, "AirLLM Runner", "Python", "Paged CPU inference with quantization")
         Component(metrics_collector, "Metrics Collector", "Python", "Timing + psutil memory sampling")
         Component(result_writer, "Result Writer", "Python", "Serializes metrics to JSON")
         Component(chart_generator, "Chart Generator", "Python", "matplotlib bar/line/scatter charts")
         Component(table_generator, "Table Generator", "Python", "pandas comparison tables")
+    }
+
+    Boundary(providers_boundary, "Providers Layer") {
+        Component(ollama_provider, "Ollama Provider", "Python", "HTTP client for Ollama API")
+        Component(transformers_provider, "Transformers Provider", "Python", "HuggingFace Transformers wrapper")
+        Component(llamacpp_provider, "llama.cpp Provider", "Python", "llama.cpp Python bindings")
     }
 
     Boundary(config_boundary, "Configuration") {
@@ -99,9 +105,13 @@ C4Component
 
     Rel(sdk_entry, config_loader, "Loads config", "")
     Rel(sdk_entry, runner_mgr, "Dispatches run", "")
-    Rel(runner_mgr, provider_runner, "Executes", "")
+    Rel(runner_mgr, gpu_runner, "Executes", "")
     Rel(runner_mgr, cpu_runner, "Executes", "")
     Rel(runner_mgr, airllm_runner, "Executes", "")
+    Rel(gpu_runner, ollama_provider, "Uses (configurable)", "")
+    Rel(gpu_runner, transformers_provider, "Uses (configurable)", "")
+    Rel(cpu_runner, ollama_provider, "Uses (configurable)", "")
+    Rel(cpu_runner, transformers_provider, "Uses (configurable)", "")
     Rel(runner_mgr, metrics_collector, "Collects during run", "")
     Rel(metrics_collector, result_writer, "Stores metrics", "")
     Rel(sdk_entry, chart_generator, "Generates charts", "")
@@ -116,10 +126,16 @@ src/airllm_benchmark/
 ├── sdk/
 │   ├── __init__.py
 │   ├── sdk.py                  # Single entry point
-│   ├── runner.py               # Runner manager (selects mode)
-├── provider_runner.py      # Configurable GPU provider runner
-├── cpu_runner.py           # Raw CPU baseline runner
+│   ├── runner.py               # Runner manager (dispatches to runners)
+│   ├── gpu_runner.py           # GPU runner (delegates to provider)
+│   ├── cpu_runner.py           # CPU baseline runner (delegates to provider)
 │   └── airllm_runner.py        # AirLLM paged runner
+├── providers/
+│   ├── __init__.py
+│   ├── base.py                 # InferenceProvider protocol
+│   ├── ollama_provider.py      # Ollama HTTP client
+│   ├── transformers_provider.py # HuggingFace Transformers wrapper
+│   └── llamacpp_provider.py    # llama.cpp Python bindings
 ├── services/
 │   ├── __init__.py
 │   ├── metrics.py              # Timing + psutil memory sampling
@@ -131,7 +147,7 @@ src/airllm_benchmark/
 └── constants.py                # Enums, physical constants
 
 config/
-├── experiment.json             # Models, prompts, max_tokens, quantization
+├── experiment.json             # Models, prompts, providers, quantization
 └── hardware.json               # Documented hardware specs
 
 results/
@@ -141,6 +157,7 @@ tests/
 ├── unit/
 │   ├── test_config.py
 │   ├── test_metrics.py
+│   ├── test_providers.py
 │   └── test_visualizer.py
 └── integration/
     └── test_pipeline.py
@@ -191,122 +208,22 @@ sequenceDiagram
 
 ---
 
-## 3. Data Schema
+## 3. Data Schema & Configuration
 
-### 3.1 Metrics Record (JSON)
-
-Each inference run produces one record appended to `results/metrics.json`.
-
-| Field              | Type     | Description                                    |
-| ------------------ | -------- | ---------------------------------------------- |
-| `run_id`           | string   | Unique identifier (e.g., `run_001`)            |
-| `model`            | string   | HuggingFace model identifier                   |
-| `mode`             | string   | `"gpu_provider"`, `"cpu_baseline"`, `"airllm"`  |
-| `provider`         | string   | Provider name (e.g., `"ollama"`, `"transformers"`) |
-| `prompt`           | string   | Input prompt text                              |
-| `prompt_id`        | string   | Prompt identifier (P1, P2, P3)                 |
-| `quantization`     | string   | `"4bit"`, `"8bit"`, or `"none"`                |
-| `max_new_tokens`   | integer  | Token generation limit                         |
-| `load_time_s`      | float    | Seconds to load model into memory              |
-| `ttft_s`           | float    | Time to first token (seconds)                  |
-| `total_runtime_s`  | float    | Total inference time (seconds)                 |
-| `tokens_generated` | integer  | Number of tokens produced                      |
-| `peak_ram_mb`      | float    | Peak RAM usage during inference (MB)           |
-| `peak_vram_mb`     | float    | Peak VRAM usage during inference (MB, if GPU)  |
-| `status`           | string   | `"success"`, `"oom"`, `"timeout"`              |
-| `error`            | string   | Error message if status != `"success"`         |
-| `timestamp`        | string   | ISO 8601 timestamp of run                      |
-
-### 3.2 Configuration — `config/experiment.json`
-
-```json
-{
-  "models": {
-    "small": { "id": "meta-llama/Llama-3.2-1B", "tier": "small" },
-    "medium": { "id": "Qwen/Qwen2.5-7B-Instruct", "tier": "medium" },
-    "large": { "id": "Qwen/Qwen2.5-72B-Instruct", "tier": "large" }
-  },
-  "prompts": {
-    "P1": "What is the capital of the United States?",
-    "P2": "Explain quantum entanglement in one paragraph.",
-    "P3": "Write a Python function that sorts a list."
-  },
-  "max_new_tokens": 32,
-  "quantization": "4bit",
-  "gpu_provider": "ollama",
-  "provider_config": {
-    "ollama": { "base_url": "http://localhost:11434" },
-    "transformers": { "device": "cuda" }
-  }
-}
-```
-
-### 3.3 Configuration — `config/hardware.json`
-
-```json
-{
-  "cpu": "",
-  "gpu": "",
-  "ram_gb": 0,
-  "disk_free_gb": 0,
-  "os": "",
-  "documented_by": "",
-  "documented_at": ""
-}
-```
-
-> All fields must be filled before running benchmarks. Empty values cause the SDK to abort with a clear error.
+See [`docs/CONFIG.md`](CONFIG.md) for the full contract:
+- Metrics record schema (`results/metrics.json`)
+- Experiment configuration (`config/experiment.json`)
+- Hardware configuration (`config/hardware.json`)
+- Environment variables (`.env`)
 
 ---
 
-## 4. SDK API Contract
+## 4. API Contracts & Interfaces
 
-### 4.1 Entry Point — `sdk.py`
-
-```python
-class BenchmarkSDK:
-    """Single entry point for all benchmark operations."""
-
-    def run_benchmark(self) -> dict:
-        """Execute full benchmark pipeline across all modes.
-
-        Returns:
-            dict with keys: summary, chart_paths, table_text
-        """
-
-    def run_single(self, model_id: str, mode: str, prompt: str) -> dict:
-        """Run a single inference and return metrics.
-
-        Args:
-            model_id: HuggingFace model identifier
-            mode: one of "gpu_provider", "cpu_baseline", "airllm"
-            provider: inference provider for GPU mode (default: "ollama")
-            prompt: input text
-
-        Returns:
-            dict matching Metrics Record schema
-        """
-
-    def generate_visualization(self) -> list[str]:
-        """Generate charts and tables from stored metrics.
-
-        Returns:
-            List of file paths to generated assets
-        """
-```
-
-### 4.2 Runner Interface
-
-All runners implement this interface:
-
-```python
-class InferenceRunner(Protocol):
-    """Interface for all inference runners."""
-
-    def load_model(self, model_id: str) -> None: ...
-    def generate(self, prompt: str, max_tokens: int) -> str: ...
-    def unload(self) -> None: ...
-```
+See [`docs/INTERFACES.md`](INTERFACES.md) for the full contract:
+- `BenchmarkSDK` entry point (`sdk.py`)
+- `InferenceProvider` protocol (`providers/base.py`)
+- `InferenceRunner` protocol (`sdk/runner.py`)
 
 ---
 
@@ -338,18 +255,18 @@ class InferenceRunner(Protocol):
 - Pros: No database dependency, easy to inspect, pandas-compatible
 - Cons: Not suitable for concurrent writes (not a concern for this exercise)
 
-### ADR-003: Separate Runners per Mode
+### ADR-003: Providers Layer with Configurable Runners
 
 **Status:** Accepted  
 **Date:** 2026-07-03
 
-**Context:** Each inference scenario (GPU provider, raw CPU baseline, AirLLM) has fundamentally different loading and generation logic. The GPU provider should be configurable (Ollama, Transformers, etc.) since providers support both GPU and CPU.
+**Context:** Each inference scenario (GPU, CPU baseline, AirLLM) has fundamentally different loading and generation logic. Multiple inference providers exist (Ollama, Transformers, llama.cpp) and each supports both GPU and CPU targets. The benchmark should not lock into a single provider.
 
-**Decision:** Implement three separate runner classes, each implementing the `InferenceRunner` protocol. The GPU provider runner is configured via `experiment.json` and can target any supported provider. A runner manager selects the correct runner based on mode.
+**Decision:** Introduce a `providers/` layer where each provider implements the `InferenceProvider` protocol. Runners (`gpu_runner`, `cpu_runner`) delegate to a configured provider. Both GPU and CPU baseline runners are provider-configurable via `experiment.json`. AirLLM has its own runner since it uses a different mechanism (paged inference, not a traditional provider).
 
 **Consequences:**
-- Pros: Clean separation, easy to add new modes, testable in isolation
-- Cons: Some duplication in model loading boilerplate (mitigated by shared utilities)
+- Pros: Any provider can be swapped for any mode, easy to add new providers, testable in isolation
+- Cons: Additional indirection layer; provider config must be validated at startup
 
 ### ADR-004: Configuration via JSON + .env
 

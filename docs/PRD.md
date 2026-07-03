@@ -280,9 +280,21 @@ Multiple providers can perform local inference. The chosen provider is configura
 | P2        | `"Explain quantum entanglement in one paragraph."` | Reasoning/summarization  |
 | P3        | `"Write a Python function that sorts a list."`  | Code generation            |
 
-### 7.3 Metrics Collection Protocol
+### 7.3 Provider Selection
 
-For each `(model, mode, prompt)` combination:
+Both GPU and CPU baseline modes use a configurable provider selected via `config/experiment.json`.
+
+| Mode               | Config Key              | Default        |
+| ------------------ | ----------------------- | -------------- |
+| GPU baseline       | `gpu_provider`          | `"ollama"`     |
+| CPU baseline       | `cpu_baseline_provider` | `"transformers"` |
+| AirLLM             | (builtin)               | N/A            |
+
+The same provider can be used for both GPU and CPU modes (e.g., `transformers` with `device: "cuda"` vs `device: "cpu"`).
+
+### 7.4 Metrics Collection Protocol
+
+For each `(model, mode, provider, prompt)` combination:
 
 1. Record **start time** (`time.perf_counter()`)
 2. Load model (include load time in metrics)
