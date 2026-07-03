@@ -553,6 +553,28 @@
 
 ---
 
+## Entry 23 — Provider Interface Tests (TODO 3.6)
+
+**Prompt:** "except additional providers, what else isn't implemented in phase 3 of the TODO?" → "write the tests, if they don't exist" → "add to prompt log and commit"
+
+**Context:** TODO item 3.6 (`tests/unit/test_providers.py`) was the only unimplemented task in Phase 3 besides the llama.cpp provider (3.5). The Ollama provider (3.3) was already removed.
+
+**Decisions:**
+- Created `tests/unit/test_providers.py` with 19 tests across 4 test classes
+- Tests verify protocol definition, `TransformersProvider` compliance, mock provider compliance, and full lifecycle scenarios
+- All external calls mocked via existing `mock_transformers` context manager
+- Removed unused imports (`runtime_checkable`, `pytest`) to satisfy ruff
+
+**Changes:**
+- `tests/unit/test_providers.py` — new file with 19 protocol compliance tests
+- `docs/PROMPT_LOG.md` — Entry 23 added
+
+**Validation:**
+- All 19 tests pass
+- ruff check = 0 violations
+
+---
+
 ## Summary of Documents
 
 | Document | Status | Purpose |
