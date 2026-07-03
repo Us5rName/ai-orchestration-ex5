@@ -354,6 +354,106 @@
 
 **Changes:** Created `tests/fixtures/config/` with fixture copies. Updated tests to use `FIXTURES_CONFIG_DIR` constant. Tests independent of project's runtime `config/`.
 
+---
+
+## Entry 18 — Phase 3 (3.1–3.2) Providers Protocol
+
+**Prompt:** "Implement only up to 3.2"
+
+**Context:** Phase 1 and Phase 2 complete. Next step is Phase 3 — Providers Layer.
+
+**Decision:** Implemented `InferenceProvider` protocol per `INTERFACES.md` §2.
+
+**Changes:**
+- `providers/base.py`: `InferenceProvider` Protocol with `load_model()`, `generate()`, `unload()`
+- `providers/__init__.py`: Exports `InferenceProvider`
+- `docs/TODO.md`: Tasks 3.1 and 3.2 marked ✅ Done
+- ruff=0, import test passes
+
+---
+
+## Entry 19 — Implementation Instructions Document
+
+**Prompt:** "Does one of the document explain how to correctly write actual implementations?"
+
+**Context:** User noticed no document explains *how* to implement providers (only *what* to implement via INTERFACES.md).
+
+**Decision:** Identified gap — no document covers implementation methodology. Proposed `docs/IMPLEMENTATION.md`.
+
+**Prompt:** "These are the implementation instructions you need to write: 1. show a basic PoC proving you know how to load and use the external library. 2. show a PoC for every feature that will be used in the module interface. Note: every PoC needs to be tested. 3. Using the lessons in of the pocs, you will build the full module"
+
+**Changes:**
+- Created `docs/IMPLEMENTATION.md` with three-step process: Library PoC → Feature PoCs → Full Module
+- Each step requires tests; PoCs are disposable after module completion
+- Includes concrete example for Ollama Provider
+
+**Prompt:** "Is the document referenced in CLAUDE.md?"
+
+**Changes:**
+- Added `docs/IMPLEMENTATION.md` to Mandatory Documents table in `CLAUDE.md`
+- Updated Final Verification Checklist to include `IMPLEMENTATION` in docs list
+
+---
+
+## Entry 20 — Commit
+
+**Prompt:** "add everything to the prompt log and commit"
+
+**Changes:**
+- Updated `docs/PROMPT_LOG.md` with Entries 18–20
+- Updated Summary of Documents table
+- Committed all changes
+
+---
+
+## Entry 18 — Phase 3 (3.1–3.2) Providers Protocol
+
+**Prompt:** "Implement only up to 3.2"
+
+**Context:** Phase 1 and Phase 2 complete. Next step is Phase 3 — Providers Layer. User wants only tasks 3.1 and 3.2.
+
+**Decision:** Implemented `InferenceProvider` protocol per `INTERFACES.md` §2.
+
+**Changes:**
+- `providers/base.py`: `InferenceProvider` Protocol with `load_model()`, `generate()`, `unload()`
+- `providers/__init__.py`: Exports `InferenceProvider`
+- `docs/TODO.md`: Tasks 3.1 and 3.2 marked ✅ Done
+- ruff=0, import test passes
+
+---
+
+## Entry 19 — Implementation Instructions Document
+
+**Prompt:** "Does one of the document explain how to correctly write actual implementations?"
+
+**Context:** User noticed no document explains *how* to implement providers (only *what* to implement via INTERFACES.md).
+
+**Decision:** Identified gap — no document covers implementation methodology. Proposed `docs/IMPLEMENTATION.md`.
+
+**Prompt:** "These are the implementation instructions you need to write: 1. show a basic, PoC, proving you know how to load and use the external library. 2. show a PoC for every feature that will be used in the module interface. Note: every PoC needs to be tested with 3. Using the lessons in of the pocs, you will build the full module"
+
+**Changes:**
+- Created `docs/IMPLEMENTATION.md` with three-step process: Library PoC → Feature PoCs → Full Module
+- Each step requires tests; PoCs are disposable after module completion
+- Includes concrete example for Ollama Provider
+
+**Prompt:** "Is the document referenced in CLAUDE.md?"
+
+**Changes:**
+- Added `docs/IMPLEMENTATION.md` to Mandatory Documents table in `CLAUDE.md`
+- Updated Final Verification Checklist to include `IMPLEMENTATION` in docs list
+
+---
+
+## Entry 20 — Commit Phase 3 Protocol + Implementation Docs
+
+**Prompt:** "add everything to the prompt log and commit"
+
+**Changes:**
+- Updated `docs/PROMPT_LOG.md` with Entries 18–20
+- Updated Summary of Documents table
+- Committed all changes
+
 **Prompt:** "Can we load the test config without fixtures?"
 
 **Changes:** Removed `@pytest.fixture` decorators. Each test now calls `load_experiment(TEST_CONFIG_DIR)` directly. Simpler, self-contained tests.
@@ -376,6 +476,7 @@
 | `docs/PLAN.md` | Complete | C4 architecture, ADRs, data flow |
 | `docs/CONFIG.md` | Complete | Config schemas, metrics record |
 | `docs/INTERFACES.md` | Complete | SDK API, provider/runner contracts |
+| `docs/IMPLEMENTATION.md` | Complete | Module implementation process (PoC → full module) |
 | `docs/TODO.md` | Complete | Tasks, integration plan, checkpoints |
 | `docs/PROMPT_LOG.md` | Complete | Session history, decisions |
 | `CLAUDE.md` | Updated | Project-specific rules |

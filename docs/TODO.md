@@ -39,8 +39,8 @@
 
 | #  | Task | Depends | Status | Definition of Done |
 |----|------|---------|--------|-------------------|
-| 3.1 | Create `providers/__init__.py` | 1.1 | Not Started | Exports `InferenceProvider` protocol |
-| 3.2 | Implement `providers/base.py` — `InferenceProvider` protocol per [`INTERFACES.md`](INTERFACES.md) §2 | 3.1 | Not Started | Protocol defined; docstrings present |
+| 3.1 | Create `providers/__init__.py` | 1.1 | ✅ Done | Exports `InferenceProvider` protocol |
+| 3.2 | Implement `providers/base.py` — `InferenceProvider` protocol per [`INTERFACES.md`](INTERFACES.md) §2 | 3.1 | ✅ Done | Protocol defined; docstrings present |
 | 3.3 | Implement `providers/ollama_provider.py` — HTTP client for Ollama API | 3.2 | Not Started | Implements `InferenceProvider`; handles connection errors |
 | ⚠️ | | | | **Caution:** Ollama must be running locally. Test with mocked HTTP; real test requires Ollama service. |
 | 3.4 | Implement `providers/transformers_provider.py` — HuggingFace Transformers wrapper | 3.2 | Not Started | Implements `InferenceProvider`; supports `device` parameter |

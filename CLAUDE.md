@@ -21,6 +21,7 @@ All documents must be read before implementation. They define the contract.
 | [`docs/PLAN.md`](docs/PLAN.md) | C4 architecture, ADRs, data flow |
 | [`docs/CONFIG.md`](docs/CONFIG.md) | Config schemas (experiment.json, hardware.json, metrics) |
 | [`docs/INTERFACES.md`](docs/INTERFACES.md) | SDK API, InferenceProvider, InferenceRunner contracts |
+| [`docs/IMPLEMENTATION.md`](docs/IMPLEMENTATION.md) | Module implementation process (PoC → full module) |
 | [`docs/TODO.md`](docs/TODO.md) | Task tracking, integration plan, checkpoints |
 
 ## 1. Core Philosophy
@@ -113,7 +114,7 @@ src/airllm_benchmark/
 - [ ] Test coverage ≥ 85%.
 - [ ] No file > 150 lines.
 - [ ] No hardcoded secrets or config.
-- [ ] Mandatory docs (`PRD`, `PLAN`, `TODO`, `CONFIG`, `INTERFACES`) up to date.
+- [ ] Mandatory docs (`PRD`, `PLAN`, `TODO`, `CONFIG`, `INTERFACES`, `IMPLEMENTATION`) up to date.
 - [ ] `uv` used for all dependency management.
 - [ ] All integration checkpoints (CP1–CP12) pass.
 - [ ] Hardware specs documented in `config/hardware.json`.
