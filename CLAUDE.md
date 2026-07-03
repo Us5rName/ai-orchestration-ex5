@@ -28,6 +28,7 @@ All documents must be read before implementation. They define the contract.
 - **Uncompromising Quality**: Clean code, full documentation, comprehensive test coverage.
 - **Broad Thinking**: Understand the full benchmark lifecycle, not just the immediate function.
 - **Transparency**: Document the "why" behind technical decisions. Maintain prompt log.
+- **Interfaces Are Holy**: `docs/INTERFACES.md` defines the immutable contract between components. Never modify interfaces without explicit consultation with the user. All implementation decisions must respect and adhere to the published interfaces.
 
 ## 2. Mandatory SDLC
 1. **Requirements**: `docs/PRD.md` — goals, KPIs, acceptance criteria.
