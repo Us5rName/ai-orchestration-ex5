@@ -468,6 +468,48 @@
 
 ---
 
+## Entry 21 — Transformers Provider (Step 1–3)
+
+**Prompt:** "Proceed to step 2" → "commmit the current changes" → "now move on to step 3. remember to use the PoC code" → "did you run the RED phase?" → "split only like you were thaught and your skills" → "Add to prompt log and commit"
+
+**Implementation process (per `docs/IMPLEMENTATION.md`):**
+
+### Step 1 — Library PoC
+- Created `pocs/transformers_library_poc.py` — minimal script proving `transformers` loads + generates
+- Created `tests/pocs/test_transformers_library_poc.py` — 3 tests
+- Verified: tiny GPT2 model loads, generates non-empty text
+
+### Step 2 — Feature PoCs
+- Created `pocs/transformers_feature_pocs.py` — 3 isolated PoCs (`poc_load_model`, `poc_generate`, `poc_unload`)
+- Created `tests/pocs/test_transformers_feature_pocs.py` — 5 tests
+- Verified: device placement, max_tokens enforcement, GC memory release
+
+### Step 3 — Full Module (TDD: RED → GREEN)
+- RED: Wrote tests first → 9/11 failed (no implementation)
+- GREEN: Built `src/.../providers/transformers_provider.py` from PoC patterns → 11/11 passed
+- REFACTOR: Split 186-line test file → 3 focused files + shared `conftest.py` (all ≤ 118 lines)
+
+**Decisions:**
+- Extracted `mock_transformers` context manager to `conftest.py` (DRY — used by all 3 test files)
+- Provider caches tokenizer per `model_id` to avoid redundant loads
+- `unload()` is safe no-op when nothing loaded
+- All external deps mocked (no model downloads in unit tests)
+
+**Files:**
+- `pocs/transformers_library_poc.py` (38 lines)
+- `pocs/transformers_feature_pocs.py` (101 lines)
+- `src/.../providers/transformers_provider.py` (118 lines)
+- `tests/pocs/test_transformers_library_poc.py` (38 lines)
+- `tests/pocs/test_transformers_feature_pocs.py` (85 lines)
+- `tests/unit/conftest.py` (56 lines)
+- `tests/unit/test_transformers_load.py` (41 lines)
+- `tests/unit/test_transformers_generate.py` (39 lines)
+- `tests/unit/test_transformers_unload.py` (35 lines)
+
+**Validation:** pytest 11/11 ✅ | ruff 0 violations ✅ | all files ≤ 150 lines ✅
+
+---
+
 ## Summary of Documents
 
 | Document | Status | Purpose |
