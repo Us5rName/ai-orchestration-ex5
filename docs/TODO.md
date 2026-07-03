@@ -48,7 +48,7 @@
 | ⚠️ | | | | **Caution:** Transformers imports PyTorch. Test with mocked model to avoid downloading weights during unit tests. |
 | 3.5 | Implement `providers/llamacpp_provider.py` — llama.cpp Python bindings | 3.2 | Not Started | Implements `InferenceProvider` |
 | ⚠️ | | | | **Caution:** Each provider wraps a different runtime (HTTP, PyTorch, native bindings). Test isolation is critical — mock all external calls. |
-| 3.6 | `tests/unit/test_providers.py` — provider interface tests | 3.3, 3.4, 3.5 | Not Started | Tests protocol compliance; all external calls mocked |
+| 3.6 | `tests/unit/test_providers.py` — provider interface tests | 3.3, 3.4, 3.5 | ✅ Done | Tests protocol compliance; all external calls mocked (split into `test_providers.py` + `test_provider_lifecycle.py`) |
 
 ---
 
