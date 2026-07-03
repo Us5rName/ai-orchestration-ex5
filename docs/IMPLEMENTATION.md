@@ -28,11 +28,11 @@ Each module follows a three-step process:
 
 ### Step 1 — Library PoC
 
-Write a minimal, standalone proof-of-concept that proves you know how to load and use the external library.
+Write a minimal, standalone proof-of-concept for each external library needed that proves you know how to load and use the external libraries needed.
 
 - **Goal:** Verify the library is available, importable, and functional.
 - **Scope:** The smallest possible script that exercises the core functionality (e.g., load a model, generate one sentence).
-- **Testing:** Must include a test that runs the PoC and asserts it produces valid output.
+- **Testing:** Must include a test that runs the PoC and asserts it produces valid output. **Always test against real data** — run the PoC on the actual machine with real hardware/resources (e.g. real GPU, real process memory); the point is to confirm the library works in the target environment.
 
 ### Step 2 — Feature PoCs
 
@@ -40,7 +40,7 @@ Write a separate PoC for **every feature** that will be exposed through the modu
 
 - **Goal:** Prove each interface method can be implemented correctly before writing the module.
 - **Scope:** One PoC per interface method or feature. Each PoC isolates a single concern.
-- **Testing:** Every PoC must be tested. Tests assert the PoC produces the expected output for its feature.
+- **Testing:** Every PoC must be tested. Tests assert the PoC produces the expected output for its feature. **Always test against real data** — exercise the actual library with real resources (e.g. real model loads, real API calls, real file I/O).
 
 ### Step 3 — Full Module
 
@@ -91,6 +91,7 @@ Every step (PoC and final module) must obey the project rules from [`CLAUDE.md`]
 
 - **No PoC, no module.** Do not skip PoCs. They are the foundation of correct implementation.
 - **Every PoC is tested.** An untested PoC provides no confidence.
+- **PoCs always use real data.** Steps 1 and 2 (Library PoC + Feature PoCs) exercise the actual library against its real environment — real GPU, real memory, real API calls. This proves the library works before the module abstracts it away.
 - **PoCs inform implementation.** Use PoC results to design error handling, edge cases, and timeouts in the final module.
 - **PoC code is reused.** The actual code from PoCs becomes the foundation of the final module. Do not rewrite from scratch — adapt the proven PoC patterns by adding error handling, validation, and docstrings. The PoC files themselves are disposable and can be removed after the module is complete.
 
