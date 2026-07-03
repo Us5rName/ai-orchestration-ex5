@@ -1,4 +1,4 @@
-"""Tests for shared/config.py — configuration loader.
+"""Tests for shared/config_loader.py — config loading and validation.
 
 Covers: valid JSON loading, missing fields, empty hardware validation,
 env var retrieval, and combined experiment+hardware loading.
@@ -11,8 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from airllm_benchmark.shared.config import (
-    ExperimentConfig,
+from airllm_benchmark.shared.config_loader import (
     HardwareConfig,
     load_experiment,
     load_hardware,
@@ -79,7 +78,7 @@ class TestLoadExperiment:
             load_experiment(tmp_path)
 
     def test_missing_required_field_raises(self, tmp_path: Path) -> None:
-        partial = {"models": {}}  # missing prompts, providers, etc.
+        partial = {"models": {}}
         cfg_path = tmp_path / "experiment.json"
         cfg_path.write_text(json.dumps(partial))
         with pytest.raises(ValueError, match="Missing required"):
@@ -119,7 +118,7 @@ class TestValidateHardware:
 
     def test_valid_passes(self) -> None:
         hw = HardwareConfig(**VALID_HARDWARE)
-        validate_hardware(hw)  # no exception
+        validate_hardware(hw)
 
     def test_empty_cpu_raises(self) -> None:
         hw = HardwareConfig(**EMPTY_HARDWARE)
@@ -131,38 +130,3 @@ class TestValidateHardware:
         hw = HardwareConfig(**partial)
         with pytest.raises(ValueError, match="ram_gb"):
             validate_hardware(hw)
-
-
-# ——— ExperimentConfig tests ———
-
-
-class TestExperimentConfig:
-    """Tests for ExperimentConfig dataclass."""
-
-    def test_get_model_id(self) -> None:
-        cfg = ExperimentConfig(**VALID_EXPERIMENT)
-        assert cfg.get_model_id("small") == "meta-llama/Llama-3.2-1B"
-
-    def test_get_model_id_missing_raises(self) -> None:
-        cfg = ExperimentConfig(**VALID_EXPERIMENT)
-        with pytest.raises(KeyError):
-            cfg.get_model_id("nonexistent")
-
-    def test_get_prompt(self) -> None:
-        cfg = ExperimentConfig(**VALID_EXPERIMENT)
-        assert cfg.get_prompt("P1") == "What is the capital?"
-
-
-# ——— HardwareConfig tests ———
-
-
-class TestHardwareConfig:
-    """Tests for HardwareConfig dataclass."""
-
-    def test_is_complete_true(self) -> None:
-        hw = HardwareConfig(**VALID_HARDWARE)
-        assert hw.is_complete() is True
-
-    def test_is_complete_false(self) -> None:
-        hw = HardwareConfig(**EMPTY_HARDWARE)
-        assert hw.is_complete() is False
