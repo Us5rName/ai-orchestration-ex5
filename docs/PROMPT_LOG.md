@@ -800,4 +800,70 @@
 
 ---
 
+## Entry 31 — Task 4.3: Visualization Pipeline PoC
+
+**Prompt:** "start 4.3. Use Implementation.md and what you were thaught and check gate"
+
+**Context:** Task 4.3 requires a POC proving the full metrics → visualization pipeline works end-to-end. Visualizer interface (§6-§7) was already approved in Entry 30. Pre-implementation gate verified all interfaces exist.
+
+**Decisions:**
+- Followed IMPLEMENTATION.md Step 1: Library PoC to verify matplotlib produces valid PNG
+- Reused proven pattern from fake MetricsRecord → bar chart → PNG output
+- Created standalone PoC in `pocs/visualization_pipeline_poc.py`
+- 15 tests covering: fake records, latency chart, memory chart, full pipeline
+- PoC code serves as foundation for full Visualizer module (task 4.4)
+
+**Changes:**
+- Created `pocs/visualization_pipeline_poc.py` (138 lines)
+- Created `tests/pocs/test_visualization_pipeline_poc.py` (122 lines)
+- Updated `docs/TODO.md` — marked 4.3 as Done
+
+**Validation:**
+- `uv run python pocs/visualization_pipeline_poc.py` → 2 PNG charts generated (17KB + 19KB)
+- `uv run pytest` → 15/15 passed
+- `uv run ruff check` → 0 violations
+- All files ≤ 150 lines
+
+---
+
+## Entry 32 — Task 4.4: Visualizer Service (Full Module)
+
+**Prompt:** "start 4.4. Use Implementation.md and what you were thaught and your skills and check gate" → "you must split according to what you were thaught about splitting and your skills"
+
+**Context:** Task 4.4 requires implementing `services/visualizer.py` per INTERFACES.md §6-§7. PoC (4.3) already proved the pipeline works. Pre-implementation gate passed: all interfaces defined.
+
+**Decisions:**
+- Followed IMPLEMENTATION.md Step 3: Full Module using PoC code as foundation
+- Applied modular-design skill: split by single responsibility
+- `visualizer.py` (115 lines): Visualizer class + VisualizationResult dataclass
+- `chart_helpers.py` (112 lines): Matplotlib rendering (latency + memory charts)
+- `table_helpers.py` (82 lines): Formatted comparison table generation
+- Tests split by feature (separation of concerns):
+  - `test_visualizer_charts.py` (101 lines): Chart rendering tests (8 tests)
+  - `test_visualizer_table.py` (53 lines): Table formatting tests (4 tests)
+  - `test_visualizer_generate_all.py` (99 lines): Pipeline + result tests (7 tests)
+- Shared `sample_records` fixture in `conftest.py` (DRY)
+- All files ≤ 150 lines per CLAUDE.md §4
+- `zip(strict=True)` per ruff B905 rule
+- Updated `services/__init__.py` with public exports
+
+**Changes:**
+- Created `src/airllm_benchmark/services/visualizer.py`
+- Created `src/airllm_benchmark/services/chart_helpers.py`
+- Created `src/airllm_benchmark/services/table_helpers.py`
+- Updated `src/airllm_benchmark/services/__init__.py`
+- Created `tests/unit/test_visualizer_charts.py`
+- Created `tests/unit/test_visualizer_table.py`
+- Created `tests/unit/test_visualizer_generate_all.py`
+- Updated `tests/unit/conftest.py` (added `sample_records` fixture)
+- Updated `docs/TODO.md` — marked 4.4 as Done
+
+**Validation:**
+- `uv run pytest` → 19/19 passed
+- `uv run ruff check` → 0 violations
+- All files ≤ 150 lines
+- `from airllm_benchmark.services import Visualizer, VisualizationResult` → import OK
+
+---
+
 ## Summary of Documents

@@ -60,8 +60,8 @@
 |----|------|---------|--------|-------------------|
 | 4.1 | Implement `services/metrics.py` — timing + psutil memory sampling | 1.1 | Done | Records TTFT, total runtime, peak RAM; 1-second sampling interval |
 | 4.2 | `tests/unit/test_metrics.py` — metrics collector tests | 4.1 | ✅ Done | Tests timing accuracy, memory sampling, peak calculation; mocked psutil (split into `test_metrics_collector.py`, `test_metrics_sampler.py`, `test_metrics_edge_cases.py`) |
-| 4.3 | POC: minimal metrics + visualization pipeline | 4.1, 4.3 | Not Started | End-to-end test: collect fake metrics → generate chart → verify PNG output |
-| 4.4 | Implement `services/visualizer.py` — chart + table generation | 4.3 | Not Started | Generates bar charts (latency, memory), comparison table; saves PNG to `assets/` |
+| 4.3 | POC: minimal metrics + visualization pipeline | 4.1 | ✅ Done | End-to-end test: collect fake metrics → generate chart → verify PNG output (15 tests, `pocs/visualization_pipeline_poc.py`) |
+| 4.4 | Implement `services/visualizer.py` — chart + table generation | 4.3 | ✅ Done | Generates bar charts (latency, memory), comparison table; saves PNG to `assets/` (split: `visualizer.py` + `chart_helpers.py` + `table_helpers.py`, 19 tests) |
 | 4.5 | `tests/unit/test_visualizer.py` — visualization tests | 4.4 | Not Started | Tests chart generation, table formatting; mocked matplotlib |
 
 ---
