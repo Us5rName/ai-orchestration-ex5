@@ -777,4 +777,27 @@
 
 ---
 
+## Entry 30 — Visualizer Interface + INCONSISTENCIES.md
+
+**Prompt:** "start 4.3. Use Implementation.md and what you were thaught and check gate" → "Propose an interface according to the plan and prd" → "What other interfaces are affected?" → "Where did resultWriter come from?" → "What is resultWriter related to?" → "In what phase of the TODO is resultWriter implemented?" → "Write it in INCONSISTENCIES.md and ignore it for now" → "The interface is approved. update all the interfaces it's relevant to. do not start the poc" → "if it's resolve you can delete it" → "don't start it. prompt log and commit"
+
+**Context:** Task 4.3 (POC: minimal metrics + visualization pipeline) requires a Visualizer interface. Pre-implementation gate per IMPLEMENTATION.md revealed Visualizer was missing from INTERFACES.md. Also discovered ResultWriter gap between PLAN architecture and TODO task list.
+
+**Decisions:**
+- Created `docs/INCONSISTENCIES.md` to track deferred gaps between docs, interfaces, and TODO
+- Logged: ResultWriter (deferred to Phase 5), TODO Summary outdated, SDK return types underspecified
+- Proposed Visualizer interface with 4 methods: `generate_latency_chart`, `generate_memory_chart`, `generate_table`, `generate_all`
+- Added `VisualizationResult` dataclass for typed SDK return
+- Updated SDK §1 `generate_visualization()` signature to accept `records` + `output_dir`, return `VisualizationResult`
+- Removed resolved items from INCONSISTENCIES.md (keep only active gaps)
+- Did NOT start PoC implementation — interface work only
+
+**Changes:**
+- Created `docs/INCONSISTENCIES.md` (3 active items)
+- Updated `docs/INTERFACES.md` v1.02 (added §6 Visualizer, §7 VisualizationResult, updated §1 SDK)
+
+**Validation:** None — interface documentation only, no code changes.
+
+---
+
 ## Summary of Documents

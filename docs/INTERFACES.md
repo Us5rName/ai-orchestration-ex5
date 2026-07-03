@@ -2,8 +2,9 @@
 
 | Metadata      | Value                                  |
 | ------------- | -------------------------------------- |
-| **Version**   | 1.01                                   |
+| **Version**   | 1.02                                   |
 | **Based on**  | `docs/PRD.md` v1.00, `docs/PLAN.md` v1.00 |
+| **Changes**   | Added §6 Visualizer, §7 VisualizationResult; updated §1 SDK |
 
 ---
 
@@ -36,11 +37,19 @@ class BenchmarkSDK:
             MetricsRecord from this run.
         """
 
-    def generate_visualization(self) -> list[str]:
-        """Generate charts and tables from stored metrics.
+    def generate_visualization(
+        self,
+        records: list[MetricsRecord],
+        output_dir: str = "assets",
+    ) -> VisualizationResult:
+        """Generate charts and tables from metrics records.
+
+        Args:
+            records: List of metrics records to visualize.
+            output_dir: Directory to save chart PNGs.
 
         Returns:
-            List of file paths to generated assets
+            VisualizationResult with chart_paths and table_text.
         """
 ```
 
@@ -202,4 +211,90 @@ class MetricsCollector(Protocol):
         Returns:
             MetricsRecord matching CONFIG.md §1 schema.
         """
+```
+
+---
+
+## 6. Visualization Service — `services/visualizer.py`
+
+Generates charts and comparison tables from metrics records.
+All chart output is saved to `assets/` directory as PNG.
+Per PRD §3.6 FR-06 and PLAN C3 chart_generator + table_generator.
+
+```python
+class Visualizer:
+    """Generates charts and tables from inference benchmark metrics."""
+
+    def generate_latency_chart(
+        self,
+        records: list[MetricsRecord],
+        output_dir: str = "assets",
+    ) -> str:
+        """Generate a bar chart comparing total_runtime_s across modes.
+
+        Args:
+            records: List of metrics records to visualize.
+            output_dir: Directory to save the chart PNG.
+
+        Returns:
+            File path to the generated chart.
+        """
+
+    def generate_memory_chart(
+        self,
+        records: list[MetricsRecord],
+        output_dir: str = "assets",
+    ) -> str:
+        """Generate a bar chart comparing peak_ram_mb across modes.
+
+        Args:
+            records: List of metrics records to visualize.
+            output_dir: Directory to save the chart PNG.
+
+        Returns:
+            File path to the generated chart.
+        """
+
+    def generate_table(self, records: list[MetricsRecord]) -> str:
+        """Generate a formatted comparison table from metrics records.
+
+        Args:
+            records: List of metrics records to tabulate.
+
+        Returns:
+            Formatted table string suitable for printing or saving.
+        """
+
+    def generate_all(
+        self,
+        records: list[MetricsRecord],
+        output_dir: str = "assets",
+    ) -> list[str]:
+        """Generate all charts and return their file paths.
+
+        Args:
+            records: List of metrics records to visualize.
+            output_dir: Directory to save chart PNGs.
+
+        Returns:
+            List of file paths to all generated PNG assets.
+        """
+```
+
+---
+
+## 7. Visualization Result — `services/visualizer.py`
+
+Typed return value for `BenchmarkSDK.generate_visualization()`.
+
+```python
+@dataclass(frozen=True)
+class VisualizationResult:
+    """Result from visualization generation.
+
+    Returned by BenchmarkSDK.generate_visualization().
+    """
+
+    chart_paths: list[str]
+    table_text: str
 ```
