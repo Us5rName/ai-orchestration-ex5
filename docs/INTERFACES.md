@@ -71,7 +71,7 @@ class InferenceProvider(Protocol):
             device: target device ("cuda", "cpu", "mps")
         """
 
-    def generate(self, prompt: str, max_tokens: int) -> str:
+    def generate(self, prompt: str, max_tokens: int) -> tuple[str, int]:
         """Generate text from a prompt.
 
         Args:
@@ -79,7 +79,8 @@ class InferenceProvider(Protocol):
             max_tokens: maximum tokens to generate
 
         Returns:
-            Generated text
+            Tuple of (generated_text, actual_token_count). Token count is
+            the number of tokens in the generated output (excluding prompt).
         """
 
     def unload(self) -> None:
@@ -150,6 +151,7 @@ class MetricsRecord:
     ttft_s: float
     total_runtime_s: float
     tokens_generated: int
+    generation_throughput: float
     peak_ram_mb: float
     peak_vram_mb: float
     status: str
@@ -189,8 +191,18 @@ class MetricsCollector(Protocol):
             max_tokens: Token generation limit.
         """
 
+    def mark_download_complete(self) -> None:
+        """Mark HF download complete. Separates download from GPU transfer."""
+
     def mark_load_complete(self) -> None:
-        """Mark model loading as complete. Captures load_time_s."""
+        """Mark model loading as complete. Captures load_time_s.
+
+        If mark_download_complete was called, load_time_s = transfer only.
+        Otherwise load_time_s = total time since start (includes download).
+        """
+
+    def mark_generation_start(self) -> None:
+        """Mark generation start. Used to compute TTFT and throughput."""
 
     def stop(self) -> None:
         """Stop memory sampling and finalize timing."""

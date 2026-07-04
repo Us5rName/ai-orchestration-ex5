@@ -25,6 +25,7 @@ Each inference run produces one record appended to the JSON array.
 | `ttft_s`           | float    | Time to first token (seconds)                  |
 | `total_runtime_s`  | float    | Total inference time (seconds)                 |
 | `tokens_generated` | integer  | Number of tokens produced                      |
+| `generation_throughput` | float | Tokens per second during generation phase      |
 | `peak_ram_mb`      | float    | Peak RAM usage during inference (MB)           |
 | `peak_vram_mb`     | float    | Peak VRAM usage during inference (MB, if GPU)  |
 | `status`           | string   | `"success"`, `"oom"`, `"timeout"`              |
