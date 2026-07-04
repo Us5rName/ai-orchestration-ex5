@@ -80,7 +80,7 @@
 | 5.5 | Implement `sdk/airllm_runner.py` — generation + metrics collection | 5.4 | ✅ Done | Generates text via `generate_text()`; collects metrics via `MetricsCollector`; returns MetricsRecord; 11 unit tests + 3 PoCs pass |
 | 5.6 | POC: minimal runner pipeline | 5.2, 5.3, 5.5 | ✅ Done | End-to-end test: runner manager → provider → metrics → verify output dict structure; 5 tests pass |
 | 5.7 | Implement `sdk/sdk.py` — `BenchmarkSDK` entry point per [`INTERFACES.md`](INTERFACES.md) §1 | 5.1, 5.2, 5.3, 5.5, 4.4, ResultWriter | ✅ Done | Orchestrates full pipeline; delegates to runners; persists via ResultWriter; 4 test files (12 tests) + 3 PoCs pass |
-| 5.8 | `tests/unit/test_runners.py` — runner tests | 5.2, 5.3, 5.5 | Not Started | Tests runner dispatch, OOM handling, metrics output; providers and metrics mocked |
+| 5.8 | `tests/unit/test_runners.py` — cross-runner tests | 5.2, 5.3, 5.5 | ✅ Done | Tests runner dispatch, OOM handling, metrics output, param propagation; 14 tests + 8 PoCs pass |
 
 ---
 

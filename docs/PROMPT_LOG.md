@@ -1469,4 +1469,48 @@ Status:         success
 
 ---
 
+## Entry 46 — Task 5.8: Cross-Runner Tests
+
+**Prompt:** "start 5.8. Use Implementation.md and what you were thaught and your skills and check gate. When finishing the module, create a PoC that uses the module."
+
+**Context:** Task 5.8 requires cross-runner unit tests verifying all three runners (GPU, CPU, AirLLM) share the same behavioral contract: consistent OOM handling, metrics output structure, parameter propagation, and RunnerManager dispatch. Dependencies (5.2, 5.3, 5.5) were all Done. Pre-Implementation Gate confirmed the InferenceRunner protocol and MetricsCollector interface exist and are clear.
+
+**Approach:** Followed `IMPLEMENTATION.md` three-step process:
+1. **Library PoC** — `poc_runners_library.py` + `test_poc_runners_library.py` — verified all runner classes are importable, instantiable, and dispatchable via RunnerManager
+2. **Feature PoCs** — Created 3 feature PoCs (OOM handling, metrics output, parameter propagation) each with standalone script + pytest test file
+3. **Full Module** — Split into 4 focused test files + 2 fixture modules to respect 150-line limit:
+   - `test_runner_manager.py` — 5 dispatch tests
+   - `test_cross_runner_oom.py` — 3 OOM tests
+   - `test_cross_runner_metrics.py` — 3 metrics output tests
+   - `test_cross_runner_params.py` — 3 parameter propagation tests
+   - `fixtures_runner.py` — shared runner fixtures and record factories
+   - `fixtures_metrics.py` — shared sample records fixture (moved from conftest.py)
+
+**Changes:**
+- Created `tests/pocs/poc_runners_library.py` — library PoC proving runner importability
+- Created `tests/pocs/test_poc_runners_library.py` — 4 library PoC tests
+- Created `tests/pocs/poc_oom_handling.py` — OOM handling PoC for all runners
+- Created `tests/pocs/test_poc_oom_handling.py` — 3 OOM PoC tests
+- Created `tests/pocs/poc_metrics_output.py` — metrics output PoC for all runners
+- Created `tests/pocs/test_poc_metrics_output.py` — 3 metrics PoC tests
+- Created `tests/pocs/poc_param_propagation.py` — parameter propagation PoC for all runners
+- Created `tests/pocs/test_poc_param_propagation.py` — 3 param propagation PoC tests
+- Created `tests/unit/test_runner_manager.py` — 5 RunnerManager dispatch tests
+- Created `tests/unit/test_cross_runner_oom.py` — 3 cross-runner OOM tests
+- Created `tests/unit/test_cross_runner_metrics.py` — 3 cross-runner metrics tests
+- Created `tests/unit/test_cross_runner_params.py` — 3 cross-runner param tests
+- Created `tests/unit/fixtures_runner.py` — shared runner fixtures
+- Created `tests/unit/fixtures_metrics.py` — shared sample records fixture
+- Updated `tests/unit/conftest.py` — moved sample_records to fixtures_metrics.py
+- Updated `docs/TODO.md` — marked 5.8 Done
+
+**Validation:**
+- `uv run ruff check` → 0 violations
+- All 14 cross-runner tests pass
+- All 8 PoC tests pass
+- All files ≤ 150 lines
+- No hardcoded config — providers and MetricsCollector mocked per project rules
+
+---
+
 ## Summary of Documents
