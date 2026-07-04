@@ -2,7 +2,7 @@
 
 | Metadata      | Value                                  |
 | ------------- | -------------------------------------- |
-| **Version**   | 1.02                                   |
+| **Version**   | 1.03                                   |
 | **Created**   | 2026-07-04                             |
 | **Purpose**   | Track gaps between docs, interfaces, and TODO |
 
@@ -10,21 +10,7 @@
 
 ---
 
-## 1. ResultWriter — Architecture vs. TODO
-
-| Attribute | Detail |
-|-----------|--------|
-| **Found in** | `PLAN.md` C3 Component Diagram (§1.3, line 91) |
-| **Also in** | `PLAN.md` Sequence Diagram (§2, lines 180, 199-200) |
-| **Missing from** | `INTERFACES.md`, `docs/TODO.md` |
-| **Description** | PLAN defines a `ResultWriter` component that serializes `MetricsRecord` → `results/metrics.json`. The Runner Manager calls `append(result)` after each run. This component is never listed as a TODO task, nor does it have an interface definition. |
-| **Impact** | Low — `sdk/sdk.py` can handle JSON persistence inline without a dedicated component. |
-| **Resolution** | Implemented `services/result_writer.py` with `append()`, `load()`, `clear()`. Added to `INTERFACES.md` §7. Unit tests: `tests/unit/test_result_writer.py` (11 tests). Real-data PoC: `pocs/result_writer_real_data_poc.py`. |
-| **Status** | ✅ Resolved |
-
----
-
-## 2. Ollama References — GPU Provider Changed to Transformers
+## 1. Ollama References — GPU Provider Changed to Transformers
 
 | Attribute | Detail |
 |-----------|--------|
@@ -38,7 +24,7 @@
 
 ---
 
-## 3. TODO Summary Table — Outdated
+## 2. TODO Summary Table — Outdated
 
 | Attribute | Detail |
 |-----------|--------|
@@ -50,7 +36,7 @@
 
 ---
 
-## 4. SDK Return Types — Underspecified
+## 3. SDK Return Types — Underspecified
 
 | Attribute | Detail |
 |-----------|--------|
@@ -58,4 +44,18 @@
 | **Description** | `run_benchmark()` returns bare `dict` with keys `summary`, `chart_paths`, `table_text`. `generate_visualization()` returns `list[str]` (chart paths only) but loses `table_text`. No typed return dataclasses defined. |
 | **Impact** | Low — works at runtime but lacks type safety. |
 | **Resolution** | Defer to Phase 5 (SDK Layer). Consider `BenchmarkResult` and `VisualizationResult` dataclasses. |
+| **Status** | 🔲 Deferred |
+
+---
+
+## 4. Additional Providers — Out of Scope
+
+| Attribute | Detail |
+|-----------|--------|
+| **Found in** | `PLAN.md` C3 Component Diagram (§1.3, lines 95-99), C4 Code Structure (§1.4, lines 134-138), ADR-003 (§5, lines 265-266), `INTERFACES.md` §2 (provider implementations table, lines 91-96), `CLAUDE.md` §3 (package layout, lines 46-56) |
+| **Also in** | `src/airllm_benchmark/providers/` (only `transformers_provider.py` exists) |
+| **Missing from** | Implementation — no `ollama_provider.py`, no `llamacpp_provider.py` |
+| **Description** | PLAN.md and INTERFACES.md document three provider implementations: Ollama, Transformers, and llama.cpp. Only `TransformersProvider` is implemented. `create_provider()` in `sdk_helpers.py` raises `ValueError` for any provider other than `"transformers"`. The additional providers are out of scope for the current exercise — the benchmark focuses on comparing GPU (via Transformers), CPU baseline (via Transformers), and AirLLM paged inference. Ollama and llama.cpp providers are documented as planned components but are not required for the benchmark's core comparison. |
+| **Impact** | Low — the benchmark functions correctly with Transformers as the sole provider. The provider abstraction layer exists and can accommodate additional providers when in scope. |
+| **Resolution** | Accept as out of scope. Update PLAN.md C3/C4, INTERFACES.md §2, and ADR-003 to explicitly mark ollama and llamacpp as "future extension" rather than required components. Keep `InferenceProvider` protocol intact for extensibility. |
 | **Status** | 🔲 Deferred |
