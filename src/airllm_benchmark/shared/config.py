@@ -8,6 +8,7 @@ from airllm_benchmark.shared.config_loader import (
     get_hf_token,
     load_experiment,
     load_hardware,
+    validate_config,
     validate_hardware,
 )
 from airllm_benchmark.shared.config_models import (
@@ -25,5 +26,6 @@ __all__ = [
     "get_hf_token",
     "load_experiment",
     "load_hardware",
+    "validate_config",
     "validate_hardware",
 ]

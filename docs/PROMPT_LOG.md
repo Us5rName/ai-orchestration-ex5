@@ -1623,4 +1623,30 @@ Status:         success
 
 ---
 
+## Entry 52 — 150-Line Rule Enforcement (Final Audit)
+
+**Prompt:** "check that the 150 lines rule actually holds to all project code files" → "yes, according to what you were taught and your skills"
+
+**Context:** CLAUDE.md §3 Strict Coding Standards mandates "No file exceeds 150 lines". Full audit of all project `.py` files (excluding `.venv` and third-party docs) revealed 2 violations.
+
+**Decision:** Applied modular-design skill (Single Responsibility, Separation of Concerns) to extract code following existing project patterns:
+1. `sdk/sdk_helpers.py` (161 → 137 lines) — Extracted `build_summary()` into new `sdk/sdk_summary.py` (46 lines). Moved `validate_config()` into `shared/config_loader.py` (belongs with config validation logic). Removed unused imports (`Path`, `Sequence`).
+2. `providers/transformers_provider.py` (152 → 147 lines) — Extracted CUDA cache clearing into `providers/transformers_helpers.py` as `clear_cuda_cache()` (follows same split pattern as `metrics_helpers.py` / `metrics.py`).
+3. Updated `shared/config.py` to re-export `validate_config` for backward compatibility.
+
+**Changes:**
+- `src/airllm_benchmark/sdk/sdk_summary.py` — New file (46 lines). Contains `build_summary()` for benchmark result formatting.
+- `src/airllm_benchmark/sdk/sdk_helpers.py` — Removed `build_summary()`, `validate_config()`, unused imports. Added `__all__` export list. Added import of `build_summary` from `sdk_summary` and `validate_config` from `config_loader` for backward compatibility. (161 → 137 lines)
+- `src/airllm_benchmark/providers/transformers_helpers.py` — Added `clear_cuda_cache()` function. (34 → 45 lines)
+- `src/airllm_benchmark/providers/transformers_provider.py` — Replaced inline CUDA cache clearing with `_helpers.clear_cuda_cache()` call. (152 → 147 lines)
+- `src/airllm_benchmark/shared/config_loader.py` — Added `validate_config()` function. (98 → 113 lines)
+- `src/airllm_benchmark/shared/config.py` — Added `validate_config` to imports and `__all__`. (29 → 31 lines)
+
+**Validation:**
+- `ruff check src/` → 0 violations.
+- No project `.py` files exceed 150 lines (verified with `wc -l` audit).
+- `uv run pytest tests/unit/` → 199 passed, 0 failures.
+
+---
+
 ## Summary of Documents

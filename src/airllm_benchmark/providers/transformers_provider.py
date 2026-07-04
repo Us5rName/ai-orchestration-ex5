@@ -18,6 +18,8 @@ from transformers import (
 from . import transformers_helpers as _helpers
 from .base import InferenceProvider
 
+_clear_cuda_cache = _helpers.clear_cuda_cache
+
 if TYPE_CHECKING:
     from transformers import PreTrainedModel
 
@@ -142,11 +144,4 @@ class TransformersProvider(InferenceProvider):
         self._model_id = None
         gc.collect()
 
-        # Clear CUDA cache if available; no-op on CPU.
-        try:
-            import torch
-
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-        except ImportError:
-            pass
+        _clear_cuda_cache()

@@ -89,6 +89,21 @@ def validate_hardware(hw: HardwareConfig) -> None:
         raise ValueError("Hardware field 'documented_at' must be filled")
 
 
+def validate_config(config_dir: Path | None = None) -> None:
+    """Validate that both experiment and hardware configs are loadable.
+
+    Args:
+        config_dir: Optional directory override.
+
+    Raises:
+        FileNotFoundError: If either config file is missing.
+        ValueError: If required fields are absent or hardware fields are empty.
+    """
+    load_experiment(config_dir)
+    hw = load_hardware(config_dir)
+    validate_hardware(hw)
+
+
 def get_hf_token() -> str | None:
     """Get HuggingFace token from environment variables.
 

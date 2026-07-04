@@ -10,20 +10,25 @@ Per PLAN.md C3 — SDK orchestrates runners, writer, and visualizer.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from airllm_benchmark.providers.transformers_provider import TransformersProvider
 from airllm_benchmark.sdk.runner import RunnerManager
+from airllm_benchmark.sdk.sdk_summary import build_summary
 from airllm_benchmark.services.result_writer import ResultWriter
-from airllm_benchmark.shared.config import load_experiment, load_hardware, validate_hardware
+from airllm_benchmark.shared.config_loader import validate_config
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from airllm_benchmark.providers.base import InferenceProvider
     from airllm_benchmark.services.metrics import MetricsRecord
     from airllm_benchmark.shared.config_models import ExperimentConfig
+
+__all__ = [
+    "build_summary",
+    "create_provider",
+    "resolve_model_id",
+    "validate_config",
+]
 
 
 def resolve_model_id(config: ExperimentConfig, model_name: str) -> str:
@@ -130,32 +135,3 @@ def _resolve_provider(config: ExperimentConfig, mode: str) -> str:
 
     msg = f"No provider mapping for mode: '{mode}'"
     raise ValueError(msg)
-
-
-def build_summary(records: Sequence[MetricsRecord]) -> str:
-    """Build human-readable summary grouped by mode."""
-    lines: list[str] = [f"Benchmark Summary — {len(records)} runs total"]
-    lines.append("-" * 40)
-
-    modes = {"gpu_provider": [], "cpu_baseline": [], "airllm": []}
-    for rec in records:
-        if rec.mode in modes:
-            modes[rec.mode].append(rec)
-
-    for mode, recs in modes.items():
-        if not recs:
-            continue
-        success = sum(1 for r in recs if r.status == "success")
-        avg_runtime = sum(r.total_runtime_s for r in recs) / len(recs)
-        lines.append(
-            f"  {mode}: {len(recs)} runs, {success}/{len(recs)} success, avg {avg_runtime:.2f}s"
-        )
-
-    return "\n".join(lines)
-
-
-def validate_config(config_dir: Path | None) -> None:
-    """Validate experiment + hardware configs are loadable."""
-    load_experiment(config_dir)
-    hw = load_hardware(config_dir)
-    validate_hardware(hw)

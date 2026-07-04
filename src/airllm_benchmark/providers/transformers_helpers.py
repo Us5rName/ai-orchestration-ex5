@@ -32,3 +32,14 @@ def build_quant_config(quantization: str) -> BitsAndBytesConfig | None:
     if quantization == "8bit":
         return BitsAndBytesConfig(load_in_8bit=True)
     return None
+
+
+def clear_cuda_cache() -> None:
+    """Clear CUDA cache if available; no-op on CPU or if torch is missing."""
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except ImportError:
+        pass
