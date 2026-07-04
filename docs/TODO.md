@@ -218,7 +218,7 @@ When an integration checkpoint fails:
 | 9.3 | Run `ruff check` — zero violations | 6.2 | ✅ Done | `uv run ruff check` returns 0 (`src tests scripts`); gated in CI |
 | 9.4 | Verify no file exceeds 150 lines | 6.2 | ✅ Done | All `.py` files ≤ 150 lines; gated in CI via `scripts/check_line_cap.py` |
 | 9.5 | Update `README.md` — installation, usage, configuration, examples | 8.6 | ✅ Done | Adopted hw5-bundle starter README with generated repo-facts region |
-| 9.6 | `tests/integration/test_pipeline.py` — full pipeline smoke test | 5.7 | Not Started | Runs small model via configured provider; validates metrics output |
+| 9.6 | `tests/integration/test_pipeline.py` — full pipeline smoke test | 5.7 | ✅ Done | Drives `BenchmarkSDK.run_single()` (real entry point, not mocked) end-to-end with a real `Qwen/Qwen2.5-0.5B-Instruct` via `TransformersProvider` on CPU (isolated `experiment.json` fixture keeps `max_new_tokens` tiny); asserts `MetricsRecord.status == "success"` plus timing/token/RAM invariants; 1 test, runs in ~11s |
 | 9.7 | Run final checklist per [`final-checklist`](.agents/skills/final-checklist/SKILL.md) | 9.2, 9.3, 9.4, 9.5 | Not Started | All checklist items pass |
 
 ---
@@ -235,5 +235,5 @@ When an integration checkpoint fails:
 | 6 — CLI | 2 | 2/2 Done |
 | 7 — Pre-Benchmark | 4 | 1/4 Done |
 | 8 — Benchmark Execution | 6 | 0/6 Done |
-| 9 — Analysis & Documentation | 7 | 4/7 Done |
-| **Total** | **50** | **37/50 Done** |
+| 9 — Analysis & Documentation | 7 | 5/7 Done |
+| **Total** | **50** | **38/50 Done** |
