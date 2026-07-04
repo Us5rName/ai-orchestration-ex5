@@ -77,7 +77,7 @@
 | ⚠️ | | | | **Caution:** CPU runner may OOM or hang on large models. Set timeout. Mock provider in tests. |
 | 5.4 | Implement `sdk/airllm_runner.py` — model loading + quantization | 4.1 | ✅ Done | Loads model via `airllm.AutoModel`; supports 4bit/8bit quantization; 11 tests pass |
 | ⚠️ | | | | **Caution:** AirLLM uses paged inference with on-demand weight loading. Split across helper functions to stay under 150 lines. Mock AirLLM in tests. |
-| 5.5 | Implement `sdk/airllm_runner.py` — generation + metrics collection | 5.4 | Not Started | Generates text; collects metrics; returns metrics dict |
+| 5.5 | Implement `sdk/airllm_runner.py` — generation + metrics collection | 5.4 | ✅ Done | Generates text via `generate_text()`; collects metrics via `MetricsCollector`; returns MetricsRecord; 11 unit tests + 3 PoCs pass |
 | 5.6 | POC: minimal runner pipeline | 5.2, 5.3, 5.5 | Not Started | End-to-end test: runner manager → provider → metrics → verify output dict structure |
 | 5.7 | Implement `sdk/sdk.py` — `BenchmarkSDK` entry point per [`INTERFACES.md`](INTERFACES.md) §1 | 5.1, 5.2, 5.3, 5.5, 4.4 | Not Started | Orchestrates full pipeline; delegates to runners |
 | 5.8 | `tests/unit/test_runners.py` — runner tests | 5.2, 5.3, 5.5 | Not Started | Tests runner dispatch, OOM handling, metrics output; providers and metrics mocked |
@@ -229,7 +229,7 @@ When an integration checkpoint fails:
 | 2 — Configuration | 5 | 0/5 Done |
 | 3 — Providers | 7 | 0/7 Done |
 | 4 — Services | 5 | 1/5 Done |
-| 5 — SDK (Runners) | 9 | 0/9 Done |
+| 5 — SDK (Runners) | 9 | 5/9 Done |
 | 6 — CLI | 2 | 0/2 Done |
 | 7 — Pre-Benchmark | 4 | 0/4 Done |
 | 8 — Benchmark Execution | 6 | 0/6 Done |
