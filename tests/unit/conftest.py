@@ -131,3 +131,27 @@ def mock_transformers(
         mock_model_cls.from_pretrained.return_value = mock_model
 
         yield mock_tok_cls, mock_model_cls, mock_tokenizer, mock_model
+
+
+@pytest.fixture
+def mock_config() -> MagicMock:
+    """Return a mocked ExperimentConfig."""
+    config = MagicMock()
+    config.models = {"small": {"id": "test/small", "tier": "small"}}
+    config.prompts = {"P1": "Hello"}
+    config.max_new_tokens = 32
+    config.quantization = "none"
+    config.gpu_provider = "transformers"
+    config.cpu_baseline_provider = "transformers"
+    config.provider_config = {"transformers": {"device": "cpu"}}
+    config.get_model_id.return_value = "test/small"
+    config.get_prompt.return_value = "Hello"
+    return config
+
+
+@pytest.fixture
+def mock_hw() -> MagicMock:
+    """Return a mocked HardwareConfig."""
+    hw = MagicMock()
+    hw.is_complete.return_value = True
+    return hw
