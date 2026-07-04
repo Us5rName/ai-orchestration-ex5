@@ -46,9 +46,9 @@
 | 3.4.1 | Verify GPU execution with real CUDA test | 3.4 | ✅ Done | RTX 4080 SUPER test: tiny model loads on cuda:0, generates text, unloads |
 | 3.4.2 | Verify CPU execution with real test | 3.4 | ✅ Done | CPU test: tiny model loads, generates text, unloads |
 | ⚠️ | | | | **Caution:** Transformers imports PyTorch. Test with mocked model to avoid downloading weights during unit tests. |
-| 3.5 | Implement `providers/llamacpp_provider.py` — llama.cpp Python bindings | 3.2 | Not Started | Implements `InferenceProvider` |
+| 3.5 | Implement `providers/llamacpp_provider.py` — llama.cpp Python bindings | 3.2 | ✅ Done | Implements `InferenceProvider`; wraps `llama_cpp.Llama` (thin provider + `llamacpp_helpers.py` split for model-source resolution/loading, matching the transformers pattern); supports local `.gguf` paths and `"repo_id::filename"` HF-Hub identifiers via `from_pretrained()`; `device` mapped to `n_gpu_layers` (`0` = CPU, `-1` = full GPU offload); HF-Hub fetch routed through `call_with_rate_limit("huggingface", ...)`; `uv sync` built `llama-cpp-python` cleanly, no toolchain blockers hit |
 | ⚠️ | | | | **Caution:** Each provider wraps a different runtime (HTTP, PyTorch, native bindings). Test isolation is critical — mock all external calls. |
-| 3.6 | `tests/unit/test_providers.py` — provider interface tests | 3.3, 3.4, 3.5 | ✅ Done | Tests protocol compliance; all external calls mocked (split into `test_providers.py` + `test_provider_lifecycle.py`) |
+| 3.6 | `tests/unit/test_providers.py` — provider interface tests | 3.3, 3.4, 3.5 | ✅ Done | Tests protocol compliance; all external calls mocked (split into `test_providers.py` + `test_provider_lifecycle.py` + `test_llamacpp_load.py`/`test_llamacpp_generate.py`/`test_llamacpp_unload.py`/`test_llamacpp_lifecycle.py`, 36 llama.cpp tests, 100% coverage on both llamacpp files) |
 | 3.7 | Implement `shared/gatekeeper.py` + `config/rate_limits.json` — rate-limited external calls per `CLAUDE.md` §3 | 2.3 | ✅ Done | `call_with_rate_limit()` wraps HF Hub calls in `transformers_helpers.py` and `airllm_loader.py`; never raises on overflow |
 | 3.8 | `tests/unit/test_gatekeeper.py` — gatekeeper tests | 3.7 | ✅ Done | Tests RateLimiter timing (mocked clock), config loading, exception propagation; 9 tests pass |
 
@@ -229,11 +229,11 @@ When an integration checkpoint fails:
 |-------|-------|--------|
 | 1 — Scaffolding | 4 | 4/4 Done |
 | 2 — Configuration | 5 | 5/5 Done |
-| 3 — Providers | 9 | 8/9 Done (3.5 llama.cpp not started; 3.3 ollama removed, excluded from count) |
+| 3 — Providers | 9 | 9/9 Done (3.3 ollama removed, excluded from count) |
 | 4 — Services | 5 | 5/5 Done |
 | 5 — SDK (Runners) | 8 | 8/8 Done |
 | 6 — CLI | 2 | 2/2 Done |
 | 7 — Pre-Benchmark | 4 | 1/4 Done |
 | 8 — Benchmark Execution | 6 | 0/6 Done |
 | 9 — Analysis & Documentation | 7 | 4/7 Done |
-| **Total** | **50** | **37/50 Done** |
+| **Total** | **50** | **38/50 Done** |
