@@ -1577,4 +1577,25 @@ Status:         success
 
 ---
 
+## Entry 50 — AirLLM Provider Bug Fix
+
+**Prompt:** `uv run python src/main.py --single --model small --mode cpu_baseline --prompt "What is AI?"` ... "Doesn't work with airllm. Fix the bug according to what you were taught and your skills"
+
+**Context:** Running with `--mode airllm` crashed with `ValueError: Unsupported provider: 'airllm'. Available: transformers`. AirLLM is a builtin runner that does not delegate to an external `InferenceProvider` — it loads and generates directly via `airllm.AutoModel`. However, both `sdk.run_single()` and `sdk_helpers._run_benchmark_impl()` unconditionally called `create_provider()` for all modes, including airllm.
+
+**Root Cause:** `create_provider()` only supports `"transformers"`. When mode is `"airllm"`, `_resolve_provider()` returns `"airllm"` and `create_provider("airllm", ...)` raises `ValueError`. `AirllmRunner.run()` accepts `provider: InferenceProvider | None` and ignores it.
+
+**Approach:** Handle airllm as a separate code path in both callers. Directly instantiate `AirllmRunner` and call with `provider=None`. No protocol changes — `InferenceRunner` protocol unchanged.
+
+**Changes:**
+- `src/airllm_benchmark/sdk/sdk.py` — `run_single()` branches on mode: airllm → direct `AirllmRunner` call with `provider=None`, other modes → existing provider + runner flow.
+- `src/airllm_benchmark/sdk/sdk_helpers.py` — `_run_benchmark_impl()` same pattern: airllm branch calls `AirllmRunner` directly, other modes use provider.
+
+**Validation:**
+- `uv run python src/main.py --single --model small --mode airllm --prompt "What is AI?"` → model loads, fetches weights, generates output (timed out due to AirLLM paged inference slowness — expected behavior).
+- No `ValueError` — airllm mode reaches inference successfully.
+- Diagnostics: 0 violations across all edited files.
+
+---
+
 ## Summary of Documents

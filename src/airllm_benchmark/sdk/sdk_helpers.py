@@ -81,19 +81,33 @@ def _run_benchmark_impl(
     for model_name in config.models:
         model_id = config.get_model_id(model_name)
         for mode in runner_mgr.get_all_modes():
-            provider_name = _resolve_provider(config, mode)
-            provider = create_provider(provider_name, config.provider_config)
-            runner = runner_mgr.get_runner(mode)
-
             for prompt_id in config.prompts:
                 prompt = config.get_prompt(prompt_id)
-                record = runner.run(
-                    provider=provider,
-                    model_id=model_id,
-                    prompt=prompt,
-                    max_tokens=config.max_new_tokens,
-                    quantization=config.quantization,
-                )
+
+                # AirLLM is builtin — no external provider needed.
+                if mode == "airllm":
+                    from airllm_benchmark.sdk.airllm_runner import AirllmRunner
+
+                    airllm_runner = AirllmRunner()
+                    record = airllm_runner.run(
+                        provider=None,
+                        model_id=model_id,
+                        prompt=prompt,
+                        max_tokens=config.max_new_tokens,
+                        quantization=config.quantization,
+                    )
+                else:
+                    provider_name = _resolve_provider(config, mode)
+                    provider = create_provider(provider_name, config.provider_config)
+                    runner = runner_mgr.get_runner(mode)
+                    record = runner.run(
+                        provider=provider,
+                        model_id=model_id,
+                        prompt=prompt,
+                        max_tokens=config.max_new_tokens,
+                        quantization=config.quantization,
+                    )
+
                 writer.append(record)
                 records.append(record)
 
