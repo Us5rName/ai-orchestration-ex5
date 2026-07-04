@@ -22,11 +22,19 @@ def mock_record() -> MagicMock:
     record.model = "test/small"
     record.mode = "cpu_baseline"
     record.provider = "transformers"
+    record.quantization = "none"
+    record.prompt = "What is the capital of France?"
     record.status = "success"
+    record.load_time_s = 1.0
+    record.ttft_s = 1.5
     record.total_runtime_s = 2.5
+    record.max_new_tokens = 32
     record.tokens_generated = 10
+    record.generation_throughput = 4.0
     record.peak_ram_mb = 100.0
+    record.peak_vram_mb = 0.0
     record.error = ""
+    record.timestamp = "2026-01-01T00:00:00+00:00"
     return record
 
 
@@ -78,6 +86,7 @@ class TestRunSingle:
             model_id="small",
             mode="cpu_baseline",
             prompt=args.prompt,
+            quantization="none",
         )
 
     @patch("src.main.BenchmarkSDK")

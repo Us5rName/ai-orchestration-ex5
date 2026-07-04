@@ -96,7 +96,7 @@ class TestRunSingle:
                 provider="custom_provider",
             )
 
-            mock_create.assert_called_with("custom_provider", mock_config.provider_config)
+            mock_create.assert_called_with("custom_provider", mock_config.provider_config, "none")
 
     def test_quantization_passed_through(
         self, mock_config: MagicMock, _record: MetricsRecord
