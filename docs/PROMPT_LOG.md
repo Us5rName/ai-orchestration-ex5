@@ -1084,4 +1084,79 @@ Status:         success
 
 ---
 
+## Entry 38 — GPU Runner PoC: Quantization + Full Metrics Audit
+
+**Prompt:** "Please also do a run with quantization" then "Are all statistics there? How are they checked?" then "Before going on to split, you must update all relevant classes and interfaces"
+
+**Context:** GPU Runner Benchmark PoC (Entry 36) ran without quantization. User requested quantized benchmark to prove 4-bit inference works end-to-end. Then asked to audit all 18 MetricsRecord fields. Then reminded to update interfaces before splitting files.
+
+**PoC Results (real hardware — NVIDIA GPU, CUDA, bitsandbytes 0.49.2):**
+
+| Metric | No Quantization | 4-bit Quantized | Difference |
+|--------|----------------|-----------------|------------|
+| Load time | 0.82s | 1.12s | +37% |
+| TTFT | 2.32s | 2.58s | +11% |
+| Total runtime | 2.75s | 2.83s | +3% |
+| Throughput | 36.90 tok/s | 64.11 tok/s | **+74%** |
+| Peak RAM | 3299.3 MB | 2614.8 MB | -21% |
+| Peak VRAM | 2373.2 MB | 1053.8 MB | **-56%** |
+
+**Metrics Audit (all 18 fields asserted in `_assert_common`):**
+
+| Field | GPU Test | CPU Test | How Checked |
+|-------|----------|----------|-------------|
+| `run_id` | ✅ | ✅ | `startswith("run_")` |
+| `model` | ✅ | ✅ | Exact match |
+| `mode` | ✅ | ✅ | Exact match |
+| `provider` | ✅ | ✅ | Exact match |
+| `prompt` | ✅ | ✅ | Exact match |
+| `prompt_id` | ✅ | ✅ | Exact match (`""`) |
+| `quantization` | ✅ | ✅ | Parametrized exact match |
+| `max_new_tokens` | ✅ | ✅ | Exact match |
+| `load_time_s` | ✅ | ✅ | `> 0` |
+| `ttft_s` | ✅ | ✅ | `> 0`, `>= load_time` |
+| `total_runtime_s` | ✅ | ✅ | `> 0`, `>= ttft` |
+| `tokens_generated` | ✅ | ✅ | `> 0` |
+| `generation_throughput` | ✅ | ✅ | `> 0` |
+| `peak_ram_mb` | ✅ | ✅ | `> 0` |
+| `peak_vram_mb` | ✅ GPU | ⚠️ skip CPU | `> 0` (GPU) |
+| `status` | ✅ | ✅ | `== "success"` |
+| `error` | ✅ | ✅ | `== ""` |
+| `timestamp` | ✅ | ✅ | Non-empty |
+
+**Interface Updates (per "Interfaces Are Holy" rule):**
+- `docs/INTERFACES.md` v1.03 — Added `quantization` to §1 SDK `run_single()`, §3 `InferenceRunner.run()`
+- `sdk/runner.py` — Updated `InferenceRunner` Protocol with `quantization` param
+- `sdk/gpu_runner.py` — Added `quantization` param; fixed `_provider_name()` (was `transformersprovider` → now `transformers`)
+
+**Modular Split (per modular-design skill):**
+- `providers/transformers_helpers.py` (34 lines, **new**) — `build_quant_config()` data layer
+- `providers/transformers_provider.py` (150 lines) — Service layer, delegates to helpers
+- Split follows established pattern: `metrics.py`/`metrics_helpers.py`, `visualizer.py`/`chart_helpers.py`
+
+**Files Changed (9 files):**
+- `pyproject.toml` — Added `bitsandbytes>=0.40.0`
+- `src/airllm_benchmark/providers/transformers_helpers.py` — **New**, quant config builder
+- `src/airllm_benchmark/providers/transformers_provider.py` — Quantization support + helpers import
+- `src/airllm_benchmark/sdk/gpu_runner.py` — Quantization param + `_provider_name` fix
+- `src/airllm_benchmark/sdk/runner.py` — Protocol updated with quantization
+- `docs/INTERFACES.md` — v1.03, §1 + §3 updated
+- `docs/PROMPT_LOG.md` — This entry
+- `tests/pocs/test_gpu_runner_benchmark_poc.py` — 4bit test + full 18-field audit
+
+**Validation:**
+- `uv run pytest tests/pocs/test_gpu_runner_benchmark_poc.py -v -s` → **2 passed, 1 skipped**
+- `uv run pytest tests/unit/ -v` → **131 passed**, 0 failed
+- `uv run ruff check src/ tests/pocs/` → **0 violations**
+- All files ≤ 150 lines
+
+**Decisions:**
+- Added `bitsandbytes` as a core dependency (not optional) — quantization is a benchmark feature
+- NF4 quant type for 4bit (best precision/performance trade-off per bitsandbytes docs)
+- `float16` compute dtype for 4bit (required for CUDA compatibility)
+- Split `transformers_provider.py` per modular-design skill before it exceeded 150 lines
+- Updated INTERFACES.md before splitting — "Interfaces Are Holy" rule
+
+---
+
 ## Summary of Documents
