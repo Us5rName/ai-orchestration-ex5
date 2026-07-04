@@ -59,6 +59,7 @@ dependencies = [
     { name = "pandas" },
     { name = "psutil" },
     { name = "ruff" },
+    { name = "torch" },
 ]
 
 [package.optional-dependencies]
@@ -84,6 +85,7 @@ requires-dist = [
     { name = "pytest-mock", marker = "extra == 'test'", specifier = ">=3.12.0" },
     { name = "ruff", specifier = ">=0.15.20" },
     { name = "ruff", marker = "extra == 'lint'", specifier = ">=0.1.0" },
+    { name = "torch", specifier = "==2.12.1" },
 ]
 provides-extras = ["test", "lint"]
 

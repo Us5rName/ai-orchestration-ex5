@@ -12,6 +12,7 @@ dependencies = [
     "matplotlib>=3.8.0",
     "pandas>=2.1.0",
     "ruff>=0.15.20",
+    "torch==2.12.1",
 ]
 
 [project.optional-dependencies]
