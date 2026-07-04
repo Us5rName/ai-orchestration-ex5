@@ -1028,4 +1028,60 @@ Status:         success
 
 ---
 
+## Entry 37 — Metric Accuracy Fixes (TTFT, Token Count, Throughput, Load Separation)
+
+**Prompt:** "Fix inaccurate metrics: ttft_s hardcoded to load_time_s, tokens_generated uses crude len(text)//4 heuristic, no generation throughput, load_time_s includes HF download."
+
+**Context:** GPU Runner Benchmark PoC (Entry 36) revealed 4 metric inaccuracies. All metrics must reflect actual values, not heuristics or hardcoded defaults.
+
+**Root Causes:**
+1. `ttft_s` — `metrics.py:132` hardcoded to `self._load_time`. Runner never recorded TTFT separately.
+2. `tokens_generated` — `gpu_runner.py` used `_estimate_tokens(text) → len(text)//4`. Provider's `generate()` returned only text, not token count.
+3. No generation throughput — Nothing measured tokens/sec.
+4. `load_time_s` — Included HF download time, not separated from GPU transfer.
+
+**Fixes Applied:**
+
+| Fix | Before | After |
+|-----|--------|-------|
+| `ttft_s` | Hardcoded to `load_time_s` | `mark_generation_start() - start_time` |
+| `tokens_generated` | `len(text)//4` heuristic | Real token count from tokenizer |
+| `generation_throughput` | Missing | `tokens / generation_duration` (tokens/sec) |
+| `load_time_s` | Includes HF download | Separated via `mark_download_complete()` |
+
+**Interface Changes:**
+- `InferenceProvider.generate()` → `tuple[str, int]` (text, token_count)
+- `MetricsCollector` → Added `mark_generation_start()`, `mark_download_complete()`
+- `MetricsRecord` → Added `generation_throughput` field
+- `TransformersProvider` → Added `on_download_complete` callback
+
+**Modular Split (per modular-design skill):**
+- `metrics.py` (134 lines) — `MetricsCollector` service layer
+- `metrics_helpers.py` (111 lines, **new**) — `MetricsRecord` data layer + `assemble_record()`
+- Both under 150-line limit. Single Responsibility: data definition vs. data collection.
+
+**Files Changed (17 files):**
+- `src/airllm_benchmark/providers/base.py` — Protocol returns tuple
+- `src/airllm_benchmark/providers/transformers_provider.py` — Real token count + download callback
+- `src/airllm_benchmark/services/metrics.py` — New lifecycle methods (134 lines)
+- `src/airllm_benchmark/services/metrics_helpers.py` — **New**, MetricsRecord + assembler (111 lines)
+- `src/airllm_benchmark/sdk/gpu_runner.py` — Uses real tokens, new lifecycle
+- `docs/INTERFACES.md` — Updated §2, §4, §5
+- `docs/CONFIG.md` — Added `generation_throughput` field
+- `docs/PROMPT_LOG.md` — This entry
+- 11 test files — Updated for tuple return, new fields, new lifecycle
+
+**Validation:**
+- `uv run pytest tests/unit/ -v` → **131 passed**, 0 failed
+- `uv run ruff check src/` → **0 violations**
+- All files ≤ 150 lines
+
+**Decisions:**
+- Changed `generate()` Protocol from `str` to `tuple[str, int]` — breaking but all consumers are internal
+- Removed `_estimate_tokens()` entirely — no longer needed with real token counts
+- Split `metrics.py` per modular-design skill — Single Responsibility principle
+- `mark_download_complete()` is optional — `load_time_s` falls back to full load time if not called
+
+---
+
 ## Summary of Documents
