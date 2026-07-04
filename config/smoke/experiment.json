@@ -1,0 +1,19 @@
+{
+  "models": {
+    "small":  { "id": "Qwen/Qwen2.5-0.5B-Instruct", "tier": "small" },
+    "medium": { "id": "Qwen/Qwen2.5-0.5B-Instruct", "tier": "small" },
+    "large":  { "id": "Qwen/Qwen2.5-0.5B-Instruct", "tier": "small" }
+  },
+  "prompts": {
+    "P1": "What is the capital of the United States?",
+    "P2": "Explain quantum entanglement in one paragraph.",
+    "P3": "Write a Python function that sorts a list."
+  },
+  "max_new_tokens": 10,
+  "quantization": "none",
+  "gpu_provider": "transformers",
+  "cpu_baseline_provider": "transformers",
+  "provider_config": {
+    "transformers": { "device": "cpu" }
+  }
+}

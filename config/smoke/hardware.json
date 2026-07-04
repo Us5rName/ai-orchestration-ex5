@@ -1,0 +1,9 @@
+{
+  "cpu": "Intel Core i9-13900K",
+  "gpu": "NVIDIA GeForce RTX 4090 24GB",
+  "ram_gb": 64,
+  "disk_free_gb": 1000,
+  "os": "Ubuntu 22.04 LTS",
+  "documented_by": "smoke_test",
+  "documented_at": "2026-07-04T00:00:00"
+}
