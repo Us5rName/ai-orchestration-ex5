@@ -1598,4 +1598,29 @@ Status:         success
 
 ---
 
+## Entry 51 — CLI Quantization + Provider Passthrough Fix
+
+**Prompt:** `uv run python src/main.py --single --model small --mode cpu_baseline --prompt "What is AI?"` followed by "Please add an option to specify quantization in the main cli run single" and "create_provider in sdk_helpers.py doesn't pass the quantization. Check if needs to be fixed in airllm as well"
+
+**Context:** The SDK's `run_single()` accepted a `quantization` parameter, but the CLI never exposed it. Worse, `create_provider()` in `sdk_helpers.py` instantiated `TransformersProvider(device=device)` without passing quantization — so the provider always defaulted to `"none"` regardless of what the user or config specified. The runners received `quantization` and recorded it in metrics, but the actual model loading ignored it.
+
+**Root Cause:** `create_provider(name, provider_config)` had no `quantization` parameter. It created `TransformersProvider(device=device)` with the constructor default `quantization="none"`. The runners passed `quantization` only to `MetricsCollector.start()` for recording — never to the provider. AirLLM was unaffected because it bypasses `create_provider()` and passes quantization directly to `load_model(model_id, quantization)`.
+
+**Approach:** Three-part fix: (1) expose `--quantization` CLI argument, (2) thread `quantization` through `create_provider()` to `TransformersProvider`, (3) update all call sites. No interface changes — `InferenceProvider` protocol unchanged.
+
+**Changes:**
+- `src/main.py` — Added `--quantization` CLI arg (`choices=["none", "4bit", "8bit"]`, default `"none"`). Wired to `sdk.run_single(quantization=args.quantization)`.
+- `src/airllm_benchmark/sdk/sdk_helpers.py` — Added `quantization` parameter to `create_provider()`. Passed to `TransformersProvider(device=device, quantization=quantization)`. Updated `_run_benchmark_impl()` call site to pass `config.quantization`.
+- `src/airllm_benchmark/sdk/sdk.py` — Updated `create_provider()` call in `run_single()` to pass `quantization`.
+- `tests/unit/test_cli.py` — Fixed `mock_record` fixture (added missing attrs: `load_time_s`, `ttft_s`, `quantization`, `prompt`, `peak_vram_mb`, `timestamp`, `max_new_tokens`, `generation_throughput`). Updated `test_delegates_to_sdk` assertion to include `quantization="none"`.
+- `tests/unit/test_sdk_run_single.py` — Updated `test_custom_provider_override` assertion to include `quantization="none"` in `assert_called_with`.
+
+**Validation:**
+- `uv run python src/main.py --single --model small --mode cpu_baseline --prompt "What is AI?" --quantization 4bit` → bitsandbytes warnings confirm quantization active, Peak RAM: 1505 MB (was 1811 MB without fix).
+- `uv run python src/main.py --single --model small --mode gpu_provider --prompt "What is AI?" --quantization 4bit` → bitsandbytes warnings, Peak VRAM: 461 MB (was 966 MB without fix).
+- `uv run python src/main.py --single --model small --mode gpu_provider --prompt "What is AI?" --quantization 8bit` → MatMul8bitLt warning confirms 8bit quantization active, Peak VRAM: 618 MB.
+- `uv run pytest tests/unit/` → 199 passed, 0 failures.
+
+---
+
 ## Summary of Documents
