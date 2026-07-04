@@ -63,15 +63,15 @@ class BenchmarkSDK:
         hw = load_hardware(self._config_dir)
         validate_hardware(hw)
 
-        output_path = (
-            Path("results") / f"metrics_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        )
+        now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_path = Path("results") / f"metrics_{now}.json"
         writer = ResultWriter(str(output_path))
         writer.clear()
 
         records = _helpers._run_benchmark_impl(config, self._runner_mgr, writer)
 
-        chart_paths = self._visualizer.generate_all(records)
+        output_dir = str(Path("assets") / f"run_{now}")
+        chart_paths = self._visualizer.generate_all(records, output_dir)
         table_text = self._visualizer.generate_table(records)
 
         return {
