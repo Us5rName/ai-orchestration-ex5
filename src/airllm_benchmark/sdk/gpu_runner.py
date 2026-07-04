@@ -10,7 +10,7 @@ Per docs/INTERFACES.md §3 and docs/IMPLEMENTATION.md §5.2.
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from airllm_benchmark.services.metrics import MetricsCollector, MetricsRecord
 
@@ -35,6 +35,7 @@ class GpuRunner:
         model_id: str,
         prompt: str,
         max_tokens: int,
+        quantization: str = "none",
     ) -> MetricsRecord:
         """Execute one GPU inference run and return metrics.
 
@@ -60,16 +61,22 @@ class GpuRunner:
         collector.start(
             model_id=model_id,
             mode=GPU_MODE,
-            provider=type(provider).__name__.lower().replace("_provider", ""),
+            provider=_provider_name(provider),
             prompt=prompt,
             prompt_id="",
-            quantization="none",
+            quantization=quantization,
             max_tokens=max_tokens,
         )
 
         try:
+            # Wire download callback so mark_download_complete fires during
+            # load_model, not after — separating HF download from GPU transfer.
+            if hasattr(provider, "_on_download_complete"):
+                # Only TransformersProvider exposes this callback.
+                # Cast to Any to satisfy static type checker.
+                cast(Any, provider)._on_download_complete = collector.mark_download_complete
+
             provider.load_model(model_id, DEFAULT_DEVICE)
-            collector.mark_download_complete()
             collector.mark_load_complete()
 
             collector.mark_generation_start()
@@ -109,3 +116,21 @@ def _classify_error(exc: Exception) -> tuple[str, str]:
     if re.search(r"(out of memory|cuda.*oom|cublas.*oom)", msg, re.IGNORECASE):
         return "oom", msg
     return "error", msg
+
+
+def _provider_name(provider: InferenceProvider) -> str:
+    """Extract short provider name from class name.
+
+    Strips the trailing \"Provider\" suffix so TransformersProvider
+    becomes \"transformers\", OllamaProvider becomes \"ollama\", etc.
+
+    Args:
+        provider: An InferenceProvider instance.
+
+    Returns:
+        Lowercase provider name without suffix.
+    """
+    name = type(provider).__name__.lower()
+    if name.endswith("provider"):
+        name = name[: -len("provider")]
+    return name

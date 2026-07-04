@@ -1,10 +1,7 @@
 """HuggingFace Transformers inference provider.
 
-Wraps ``transformers.AutoModelForCausalLM`` behind the
-:class:`~airllm_benchmark.providers.base.InferenceProvider` protocol
+Wraps ``AutoModelForCausalLM`` behind the InferenceProvider protocol
 so runners remain provider-agnostic.
-
-Derived from Step 2 Feature PoCs (``pocs/transformers_feature_pocs.py``).
 """
 
 from __future__ import annotations
@@ -13,8 +10,12 @@ import gc
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+)
 
+from . import transformers_helpers as _helpers
 from .base import InferenceProvider
 
 if TYPE_CHECKING:
@@ -38,9 +39,11 @@ class TransformersProvider(InferenceProvider):
     def __init__(
         self,
         device: str = "cpu",
+        quantization: str = "none",
         on_download_complete: Callable[[], None] | None = None,
     ) -> None:
         self._device = device
+        self._quantization = quantization
         self._model: PreTrainedModel | None = None
         self._tokenizer: AutoTokenizer | None = None
         self._model_id: str | None = None
@@ -78,7 +81,14 @@ class TransformersProvider(InferenceProvider):
         if self._on_download_complete is not None:
             self._on_download_complete()
 
-        self._model = AutoModelForCausalLM.from_pretrained(model_id).to(target)
+        # Build quantization config when 4bit/8bit is requested.
+        quant_config = _helpers.build_quant_config(self._quantization)
+
+        model_kwargs = {}
+        if quant_config is not None:
+            model_kwargs["quantization_config"] = quant_config
+
+        self._model = AutoModelForCausalLM.from_pretrained(model_id, **model_kwargs).to(target)
 
     # ——— InferenceProvider: generate ———
 
