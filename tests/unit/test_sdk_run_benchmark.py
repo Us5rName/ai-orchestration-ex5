@@ -110,4 +110,8 @@ class TestRunBenchmark:
 
             sdk.run_benchmark()
 
-            sdk._visualizer.generate_all.assert_called_once_with([_record])
+            sdk._visualizer.generate_all.assert_called_once()
+            call_args = sdk._visualizer.generate_all.call_args
+            assert call_args[0][0] == [_record]
+            # output_dir should be a timestamped subdirectory
+            assert call_args[0][1].startswith("assets/run_")
