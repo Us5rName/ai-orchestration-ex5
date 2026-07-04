@@ -1513,4 +1513,28 @@ Status:         success
 
 ---
 
+## Entry 47 — Task 6.1: POC CLI → SDK Smoke Test
+
+**Prompt:** "Implement phase 6.1 according to what you were thaught and your skills"
+
+**Context:** Task 6.1 requires a POC CLI that accepts `--single`, calls SDK with small model, prints result — no full pipeline. Dependency 5.7 (BenchmarkSDK) was Done. Pre-Implementation Gate: No interface needed in INTERFACES.md for CLI (presentation layer per ADR-001). SDK `run_single()` interface is well-defined.
+
+**Approach:** Followed SDK-First Architecture skill — CLI is a thin presentation layer that delegates all logic to `BenchmarkSDK`. TDD skill — tests written alongside implementation. Created minimal CLI with argparse, mocking SDK in unit tests, then validated with real data.
+
+**Changes:**
+- Created `src/main.py` — CLI entry point with `--single`, `--model`, `--mode`, `--prompt`, `--config-dir` flags (94 lines)
+- Created `tests/unit/test_cli.py` — 8 unit tests (argparse + SDK delegation, all mocked) (111 lines)
+- Updated `docs/TODO.md` — marked 6.1 Done
+
+**Validation:**
+- `uv run ruff check src/ tests/` → 0 violations
+- `uv run pytest tests/unit/` → 199 passed (8 new CLI tests + 191 existing)
+- Real-data smoke test: `uv run python src/main.py --single --model Qwen/Qwen2.5-0.5B-Instruct --mode cpu_baseline` → CLI → SDK → Provider → Model load → Result printed successfully
+- All files ≤ 150 lines
+- No hardcoded config — all defaults via argparse, config loaded from `experiment.json`
+
+**Note:** Real-data test revealed pre-existing device mismatch bug in `cpu_runner`/`transformers_provider` (tokenizer input_ids on cuda:0, model on cpu). CLI correctly surfaced and printed the error. Bug fix deferred — outside Phase 6.1 scope.
+
+---
+
 ## Summary of Documents
