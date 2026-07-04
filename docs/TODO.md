@@ -89,7 +89,7 @@
 | #  | Task | Depends | Status | Definition of Done |
 |----|------|---------|--------|-------------------|
 | 6.1 | POC: CLI → SDK smoke test | 5.7 | ✅ Done | CLI accepts `--single`, delegates to SDK.run_single(), prints MetricsRecord — 8 tests pass |
-| 6.2 | Implement `src/main.py` — CLI that delegates to `BenchmarkSDK` | 6.1 | Not Started | Accepts `--run-all` and `--single` flags; prints summary; delegates all logic to SDK |
+| 6.2 | Implement `src/main.py` — CLI that delegates to `BenchmarkSDK` | 6.1 | ✅ Done | Accepts `--run-all` and `--single` flags; prints summary; delegates all logic to SDK — 14 tests pass, ruff=0, real validation done |
 
 ---
 

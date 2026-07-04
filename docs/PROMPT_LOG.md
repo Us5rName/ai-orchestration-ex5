@@ -1649,4 +1649,32 @@ Status:         success
 
 ---
 
+## Entry 53 — Phase 6.2: CLI Entry Point (`src/main.py`)
+
+**Prompt:** "Implement phase 6.2 according to what you were taught and your skills. Remember to actually test the final module for real"
+
+**Context:** TODO.md task 6.2 requires implementing `src/main.py` — CLI that delegates to `BenchmarkSDK`. Depends on 6.1 (POC: CLI → SDK smoke test) which was Done. Definition of Done: Accepts `--run-all` and `--single` flags; prints summary; delegates all logic to SDK. The existing `src/main.py` had `--single` but was missing `--run-all`. Adding `--run-all` would push the file over the 150-line limit.
+
+**Decision:** Applied IMPLEMENTATION.md three-step process (Library PoC → Feature PoCs → Full Module) and modular-design skill (Single Responsibility):
+1. **Library PoC** (`pocs/cli_run_all_poc.py`) — Verified SDK delegation pattern with real config + real inference (Qwen2.5-0.5B, cpu_baseline, success in 2.16s).
+2. **Full Module** — Added `--run-all` flag + `run_all()` function. Extracted `print_result()` and new `print_run_all_result()` into `src/airllm_benchmark/cli_printers.py` to respect 150-line limit (same split pattern as `metrics_helpers.py` / `metrics.py`).
+3. **Tests** — Added 6 new tests for `--run-all` (parse args, SDK delegation, output formatting). Total 14 tests, all pass.
+
+**Changes:**
+- `src/main.py` — Added `--run-all` argument, `run_all()` function, updated `main()` dispatch. Imports print helpers from `cli_printers`. (141 → 113 lines)
+- `src/airllm_benchmark/cli_printers.py` — New file (70 lines). Contains `print_result()` and `print_run_all_result()` for CLI output formatting.
+- `tests/unit/test_cli.py` — Added `TestParseArgsRunAll` (3 tests) and `TestRunAll` (3 tests). Updated imports to include `run_all`. (8 → 14 tests)
+- `pocs/cli_run_all_poc.py` — New PoC (82 lines). Validates SDK delegation with real config + real inference.
+- `docs/TODO.md` — Marked 6.2 as Done.
+
+**Validation:**
+- `uv run pytest tests/unit/test_cli.py` → 14 passed, 0 failures.
+- `uv run pytest tests/unit/` → 205 passed, 0 failures.
+- `uv run ruff check src/ tests/` → 0 violations.
+- `src/main.py` (113 lines), `cli_printers.py` (70 lines) — both under 150-line limit.
+- Real validation: `uv run python src/main.py --single --model small --mode cpu_baseline --prompt "What is 2+2?"` → ✓ success, 2.16s runtime, 29.5 tok/s.
+- Smoke test: `uv run python src/main.py --run-all --config-dir config/smoke` → 27/27 runs succeeded across all modes (gpu_provider avg 1.84s, cpu_baseline avg 1.86s, airllm avg 36.50s).
+
+---
+
 ## Summary of Documents
