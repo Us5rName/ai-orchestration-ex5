@@ -40,9 +40,9 @@ class GpuRunner:
 
         Lifecycle:
             1. Start metrics collection
-            2. Load model onto GPU
-            3. Mark load complete
-            4. Generate text
+            2. Load model onto GPU (marks download + load complete)
+            3. Mark generation start (TTFT boundary)
+            4. Generate text (returns real token count)
             5. Stop metrics
             6. Unload model
             7. Return MetricsRecord
@@ -69,12 +69,13 @@ class GpuRunner:
 
         try:
             provider.load_model(model_id, DEFAULT_DEVICE)
+            collector.mark_download_complete()
             collector.mark_load_complete()
 
-            output = provider.generate(prompt, max_tokens)
+            collector.mark_generation_start()
+            output, tokens = provider.generate(prompt, max_tokens)
             collector.stop()
 
-            tokens = _estimate_tokens(output)
             return collector.get_record(
                 tokens_generated=tokens,
                 status="success",
@@ -92,22 +93,6 @@ class GpuRunner:
 
         finally:
             provider.unload()
-
-
-def _estimate_tokens(text: str) -> int:
-    """Estimate token count from generated text length.
-
-    Uses rough 4-character-per-token heuristic. Sufficient for
-    benchmarking purposes where exact token counts are less
-    critical than relative comparisons.
-
-    Args:
-        text: Generated text output.
-
-    Returns:
-        Estimated number of tokens.
-    """
-    return max(1, len(text) // 4)
 
 
 def _classify_error(exc: Exception) -> tuple[str, str]:
