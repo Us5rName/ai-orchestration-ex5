@@ -1276,4 +1276,53 @@ Status:         success
 
 ---
 
+## Entry 41 — Task 5.5: AirLLM Runner (Generation + Metrics Collection)
+
+**Prompt:** "start 5.5. Use Implementation.md and what you were thaught and your skills and check gate. When finishing the module, create a PoC that uses the module."
+
+**Context:** Task 5.5 requires implementing generation + metrics collection in `sdk/airllm_runner.py`. The `run()` method already existed from 5.4, but needed Feature PoCs to prove generation and metrics collection work independently against real hardware before marking complete.
+
+**Pre-Implementation Gate:**
+- ✅ INTERFACES.md §3 defines `InferenceRunner.run()` protocol
+- ✅ INTERFACES.md §4 defines `MetricsRecord` dataclass
+- ✅ INTERFACES.md §5 defines `MetricsCollector` protocol
+- ✅ Dependencies satisfied: 5.4 (loader + generator ✅), 4.1 (metrics ✅)
+- ✅ Gate passed — no gaps or ambiguities
+
+**Step 1 — Library PoC:** Already completed in Entry 40 (`test_airllm_library_poc.py`)
+
+**Step 2 — Feature PoCs (real data):**
+- `tests/pocs/test_airllm_generation_poc.py` — 2 tests: 4bit quantization, no quantization
+- `tests/pocs/test_airllm_metrics_poc.py` — 1 test: full MetricsCollector lifecycle
+- Real-data test: `Qwen/Qwen2.5-0.5B-Instruct` with 4bit compression
+- Result: 3/3 passed
+
+**Step 3 — Full Module:** Already implemented in Entry 40, verified with Feature PoCs
+
+**PoC Results (real data — 0.5B model, 4bit):**
+- Generation PoC: 2/2 passed — text output valid, token count correct
+- Metrics PoC: 1/1 passed — load_time=3.03s, TTFT=3.03s, runtime=32.22s, throughput=0.27 tok/s, RAM=1807.8MB, VRAM=333.0MB
+- Module PoC: 1/1 passed — full `AirllmRunner.run()` pipeline
+
+**Decisions:**
+- Feature PoCs isolate generation and metrics collection before full module verification
+- Generation PoC tests both quantized (4bit) and uncompressed (none) modes
+- Metrics PoC exercises complete MetricsCollector lifecycle: start → load → generation → stop → record
+- Ruff F541 violations fixed (f-string without placeholders)
+
+**Changes:**
+- Created `tests/pocs/test_airllm_generation_poc.py` — Feature PoC for generation (2 tests)
+- Created `tests/pocs/test_airllm_metrics_poc.py` — Feature PoC for metrics collection (1 test)
+- Updated `docs/TODO.md` — marked 5.5 as Done
+- Updated `docs/PROMPT_LOG.md` — this entry
+
+**Validation:**
+- Feature PoCs (real data): 3/3 passed
+- Module PoC (real data): 1/1 passed
+- Unit tests (mocked): 11/11 passed
+- `uv run ruff check` → 0 violations
+- All files ≤ 150 lines
+
+---
+
 ## Summary of Documents
