@@ -73,6 +73,8 @@ class TransformersProvider(InferenceProvider):
         if self._tokenizer is not None and self._model_id == model_id:
             return
 
+        # Sync instance device so generate() uses the same target.
+        self._device = target
         self._model_id = model_id
         self._tokenizer = AutoTokenizer.from_pretrained(model_id)
 

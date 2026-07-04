@@ -1537,4 +1537,29 @@ Status:         success
 
 ---
 
+## Entry 48 — Device Mismatch Fix + Model Resolution
+
+**Prompt:** "uv run python src/main.py --single --model small --mode cpu_baseline --prompt 'What is AI?' ... Fix the bug according to what you were thaught and your skills"
+
+**Context:** CPU baseline smoke test failed with device mismatch: tokenizer placed `input_ids` on `cuda:0` while the model was on `cpu`. Secondary issue: `--model small` tier name not resolved to actual HuggingFace model ID.
+
+**Root Cause Analysis:**
+1. **Device Mismatch:** `TransformersProvider.load_model(model_id, device)` received `device="cpu"` from `cpu_runner` and correctly loaded the model via local `target` variable. But it never updated `self._device` (instance attribute). `generate()` used stale `self._device` (from `__init__` which read `"cuda"` from `config/experiment.json` provider_config). Result: model on CPU, input tensors on CUDA.
+2. **Model Resolution:** `sdk.run_single()` passed `model_id` directly to the runner without resolving tier names (e.g., `"small"` → `"Qwen/Qwen2.5-0.5B-Instruct"`). Full HF IDs worked; tier aliases failed.
+
+**Approach:** Surgical fix in provider layer (device sync) and SDK layer (model resolution). No interface changes — both fixes are internal implementation corrections.
+
+**Changes:**
+- `src/airllm_benchmark/providers/transformers_provider.py` — Added `self._device = target` in `load_model()` to sync instance device before loading. Ensures `generate()` uses the same device as the model.
+- `src/airllm_benchmark/sdk/sdk_helpers.py` — Added `resolve_model_id()` helper: passes through full HF IDs (containing `/`), resolves tier names via `config.get_model_id()`.
+- `src/airllm_benchmark/sdk/sdk.py` — Call `resolve_model_id()` in `run_single()` before passing to runner.
+
+**Validation:**
+- `uv run python src/main.py --single --model small --mode cpu_baseline --prompt "What is AI?"` → success
+- Model resolved: `Qwen/Qwen2.5-0.5B-Instruct`
+- Status: success, Runtime: 3.05s, Tokens: 32, Peak RAM: 1775 MB
+- No device mismatch error
+
+---
+
 ## Summary of Documents

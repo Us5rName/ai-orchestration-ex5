@@ -26,6 +26,27 @@ if TYPE_CHECKING:
     from airllm_benchmark.shared.config_models import ExperimentConfig
 
 
+def resolve_model_id(config: ExperimentConfig, model_name: str) -> str:
+    """Resolve a model tier name to its HuggingFace model ID.
+
+    If the model name is already a full HuggingFace identifier (contains
+    a slash), return it unchanged. Otherwise look it up in the config.
+
+    Args:
+        config: Loaded experiment configuration.
+        model_name: Tier name (e.g. ``"small"``) or full model ID.
+
+    Returns:
+        HuggingFace model identifier string.
+
+    Raises:
+        KeyError: If tier name is not found in config.
+    """
+    if "/" in model_name:
+        return model_name
+    return config.get_model_id(model_name)
+
+
 def create_provider(name: str, provider_config: dict) -> InferenceProvider:
     """Instantiate an InferenceProvider by name.
 

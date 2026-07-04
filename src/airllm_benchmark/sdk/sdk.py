@@ -99,6 +99,7 @@ class BenchmarkSDK:
             MetricsRecord from this run.
         """
         config = load_experiment(self._config_dir)
+        model_id = _helpers.resolve_model_id(config, model_id)
         provider_name = provider or _helpers._resolve_provider(config, mode)
         prov = _helpers.create_provider(provider_name, config.provider_config)
         runner = self._runner_mgr.get_runner(mode)
