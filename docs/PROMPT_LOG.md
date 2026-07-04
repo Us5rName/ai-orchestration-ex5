@@ -994,4 +994,38 @@
 
 ---
 
+## Entry 36 — GPU Runner Benchmark PoC
+
+**Prompt:** "Please write a PoC that shows the gpu runner benchmarked"
+
+**Context:** Task 5.2 implementation complete. Need a real-hardware PoC to prove GpuRunner works end-to-end with actual metrics collection.
+
+**PoC Results (real hardware — NVIDIA GPU, CUDA available):**
+```
+Model:          meta-llama/Llama-3.2-1B
+Mode:           gpu_provider
+Load time:      105.01s  (includes 2.47GB model download)
+Total runtime:  105.52s
+Tokens gen:     14  (estimated via len(text)//4 heuristic)
+Peak RAM:       3118.9 MB
+Peak VRAM:      2373.2 MB
+Status:         success
+```
+
+**Metrics Gaps Identified:**
+- `ttft_s` = `load_time_s` — hardcoded in metrics.py, should measure time-to-first-token
+- `tokens_generated` — uses crude character heuristic, not actual tokenizer count
+- `load_time_s` — includes HF download time, should separate from GPU transfer
+- No generation throughput metric (tokens/sec)
+
+**Changes:**
+- Created `tests/pocs/test_gpu_runner_benchmark_poc.py` — Real-hardware benchmark PoC with CUDA skip guard
+- Updated `docs/PROMPT_LOG.md` — this entry
+
+**Validation:**
+- `uv run pytest tests/pocs/test_gpu_runner_benchmark_poc.py -v -s` → 1 passed, 1 skipped (CPU fallback)
+- PoC ran on real GPU with real model, real metrics
+
+---
+
 ## Summary of Documents
