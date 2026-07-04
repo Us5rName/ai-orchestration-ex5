@@ -1700,4 +1700,41 @@ Status:         success
 
 ---
 
+## Entry 55 — Phase 3.5: `providers/llamacpp_provider.py`
+
+**Prompt:** "Finish Phase 3 by implementing `providers/llamacpp_provider.py` — llama.cpp Python bindings, for completeness. Do it properly, not as a stub." (Inconsistencies.md #4 had previously marked llama.cpp as out of scope; user explicitly asked for it anyway.)
+
+**Context:** TODO.md task 3.5 was the only remaining Phase 3 item. `InferenceProvider` protocol (`load_model`, `generate`, `unload`) is defined in `providers/base.py`; `TransformersProvider` + `transformers_helpers.py` set the established thin-provider/helpers split pattern and the API Gatekeeper convention (`call_with_rate_limit("huggingface", ...)` for external HF calls).
+
+**Decision:** Added `llama-cpp-python` as a dependency and implemented `LlamaCppProvider` following the same split as the transformers provider:
+- `providers/llamacpp_provider.py` (110 lines) — thin provider wrapping `llama_cpp.Llama`.
+- `providers/llamacpp_helpers.py` (103 lines) — model-source resolution (`split_model_id`), device→`n_gpu_layers` mapping (`resolve_n_gpu_layers`), the gatekeeper-wrapped load call (`load_llama_model`), and token-count fallback (`count_completion_tokens`).
+
+**Design choices:**
+- `model_id` accepts either a local `.gguf` path, or a HuggingFace-Hub identifier of the form `"repo_id::filename"` (the `::` separator was chosen because it cannot appear in a repo id or a filesystem path), resolved via `Llama.from_pretrained(repo_id=..., filename=...)`. Only the HF-Hub fetch branch goes through `call_with_rate_limit("huggingface", ...)` — the local-path branch is disk I/O, not an external call, so it is not gatekept.
+- `device` maps to `n_gpu_layers`: `"cpu"` → `0`, anything else (`"cuda"`, `"mps"`, `"gpu"`, ...) → `-1` (offload all layers), mirroring how `TransformersProvider` maps `device` onto `.to(target)`.
+- `generate()` prefers `response["usage"]["completion_tokens"]` for the actual token count, falling back to re-tokenizing the generated text via `llm.tokenize()` when `usage` is absent (some binding versions omit it).
+- `load_model()` / `unload()` follow the same idempotent-cache / `gc.collect()` pattern as `TransformersProvider`.
+
+**Build risk check:** `llama-cpp-python` compiles a native extension. `cmake` was not preinstalled and no passwordless `sudo` was available, but `uv sync` built the wheel successfully anyway (prebuilt `cmake` came in via the build backend's own build-time dependency) — no toolchain intervention was needed.
+
+**Scope boundary:** `LlamaCppProvider` is implemented and unit-tested but **not** wired into `sdk/sdk_helpers.py`'s `create_provider()` factory or `config/experiment.json` — that wiring was out of scope for this task (only TODO 3.5 was requested) and the benchmark's core comparison still runs through Transformers. Documented explicitly in `INCONSISTENCIES.md` #4 so it isn't mistaken for a wired, selectable provider.
+
+**Changes:**
+- `pyproject.toml` — added `llama-cpp-python>=0.3.0`; `uv.lock` regenerated.
+- `src/airllm_benchmark/providers/llamacpp_provider.py` — new (110 lines).
+- `src/airllm_benchmark/providers/llamacpp_helpers.py` — new (103 lines).
+- `tests/unit/conftest.py` — added `llamacpp_provider` fixture and `mock_llamacpp()` context manager (patches `llamacpp_helpers.Llama`).
+- `tests/unit/test_llamacpp_load.py`, `test_llamacpp_generate.py`, `test_llamacpp_unload.py`, `test_llamacpp_lifecycle.py` — new, 36 tests total, 100% coverage on both new files.
+- `docs/TODO.md` — 3.5 marked ✅ Done; 3.6 note updated; Phase 3 row now 9/9 Done; Summary Total 38/50 Done.
+- `docs/INCONSISTENCIES.md` — #4 changed from "Out of Scope" to "🟡 Partially Resolved" (llama.cpp implemented; Ollama still deferred); version bumped 1.04 → 1.05.
+- `docs/INTERFACES.md` / `docs/PLAN.md` — checked against the implementation; both already described llama.cpp accurately (Python bindings), no changes needed.
+
+**Validation:**
+- `uv run ruff check src tests scripts` → 0 violations.
+- `uv run python scripts/check_line_cap.py src tests --limit 150 --mode raw` → passes.
+- `uv run pytest --cov=airllm_benchmark --cov-report=term-missing --cov-fail-under=85` → 309 passed, 9 skipped, 90.34% coverage (both new llamacpp files at 100%).
+
+---
+
 ## Summary of Documents
