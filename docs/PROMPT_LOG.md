@@ -1325,4 +1325,50 @@ Status:         success
 
 ---
 
+## Entry 42 — Task 5.6: POC Minimal Runner Pipeline
+
+**Prompt:** "start 5.6. Use Implementation.md and what you were thaught and your skills and check gate. When finishing the module, create a PoC that uses the module."
+
+**Context:** Task 5.6 requires an end-to-end POC that exercises the full runner pipeline: `RunnerManager → runner → provider → MetricsCollector → MetricsRecord`. The goal is to verify that every runner mode (gpu_provider, cpu_baseline, airllm) produces a valid `MetricsRecord` with all 18 fields correctly populated.
+
+**Pre-Implementation Gate:**
+- ✅ INTERFACES.md §3 defines `InferenceRunner.run()` protocol
+- ✅ INTERFACES.md §4 defines `MetricsRecord` dataclass
+- ✅ INTERFACES.md §5 defines `MetricsCollector` protocol
+- ✅ INTERFACES.md §2 defines `InferenceProvider` protocol
+- ✅ Dependencies satisfied: 5.2 (GpuRunner ✅), 5.3 (CpuRunner ✅), 5.5 (AirllmRunner ✅)
+- ✅ Gate passed — no gaps or ambiguities
+
+**Implementation Approach:**
+- Created `MockProvider` implementing `InferenceProvider` protocol for deterministic test output
+- Used real `RunnerManager`, `GpuRunner`, `CpuRunner`, `AirllmRunner`, and `MetricsCollector` modules
+- Mocked only external dependencies (provider for GPU/CPU, airllm library for AirLLM)
+- Verified all 18 `MetricsRecord` fields with type and value assertions
+- Split into two files per 150-line rule and modular-design skill (single responsibility)
+
+**Decisions:**
+- Separated helpers (`pipeline_helpers.py`) from tests (`test_runner_pipeline_poc.py`) per modular-design skill
+- `MockProvider` is reusable across pipeline PoCs
+- AirLLM test patches `airllm_runner` namespace (where symbols are looked up via `from .module import name`)
+- GPU/CPU runners exercise real `MetricsCollector` with real psutil RAM sampling
+
+**Changes:**
+- Created `tests/pocs/pipeline_helpers.py` — MockProvider + assertion/print helpers (92 lines)
+- Created `tests/pocs/test_runner_pipeline_poc.py` — 5 end-to-end pipeline tests (125 lines)
+- Updated `docs/TODO.md` — marked 5.6 as Done
+- Updated `docs/PROMPT_LOG.md` — this entry
+
+**Validation:**
+- Pipeline PoC tests: 5/5 passed
+- GPU provider pipeline: MetricsRecord with all 18 fields valid
+- CPU baseline pipeline: MetricsRecord with all 18 fields valid
+- AirLLM pipeline: MetricsRecord with all 18 fields valid
+- Mode dispatch: 3 modes correctly registered
+- Error handling: Unknown mode raises ValueError
+- `uv run ruff check` → 0 violations
+- All files ≤ 150 lines (92 + 125)
+- Full test suite: 159/159 passed (unit + pipeline PoC)
+
+---
+
 ## Summary of Documents
