@@ -28,7 +28,7 @@ class InferenceProvider(Protocol):
         """
         ...
 
-    def generate(self, prompt: str, max_tokens: int) -> str:
+    def generate(self, prompt: str, max_tokens: int) -> tuple[str, int]:
         """Generate text from a prompt.
 
         Args:
@@ -36,7 +36,8 @@ class InferenceProvider(Protocol):
             max_tokens: Maximum number of tokens to generate.
 
         Returns:
-            The generated text string.
+            Tuple of (generated_text, actual_token_count). The token count
+            is the number of tokens in the generated text (excluding prompt).
         """
         ...
 
