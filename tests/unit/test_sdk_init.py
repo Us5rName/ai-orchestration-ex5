@@ -9,6 +9,7 @@ Per docs/TODO.md task 5.7 — split by interface method.
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import patch
 
 from airllm_benchmark.sdk.sdk import BenchmarkSDK
 
@@ -35,3 +36,16 @@ class TestSDKInit:
         """SDK creates Visualizer on init."""
         sdk = BenchmarkSDK()
         assert sdk._visualizer is not None
+
+
+class TestSDKValidate:
+    """BenchmarkSDK.validate() delegation tests (docs/TODO.md task 7.4)."""
+
+    def test_delegates_to_run_validation_with_config_dir(self) -> None:
+        """validate() forwards the SDK's config_dir to run_validation()."""
+        sdk = BenchmarkSDK(config_dir="/custom/path")
+        with patch("airllm_benchmark.sdk.sdk.run_validation") as mock_run:
+            result = sdk.validate()
+
+        mock_run.assert_called_once_with(Path("/custom/path"))
+        assert result is mock_run.return_value
