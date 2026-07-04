@@ -13,12 +13,15 @@ from tests.unit.conftest import mock_transformers
 class TestGenerate:
     """Tests for TransformersProvider.generate()."""
 
-    def test_generate_returns_text(self, provider: TransformersProvider) -> None:
-        with mock_transformers(tokenizer_decode="Hello world this is text") as (_tc, _mc, _mt, _mm):
+    def test_generate_returns_tuple(self, provider: TransformersProvider) -> None:
+        """generate() returns (text, token_count) tuple."""
+        with mock_transformers(tokenizer_decode="Hello world this is text") as (_tc, _mc, _t, _mm):
             provider.load_model("gpt2", "cpu")
-            result = provider.generate("Hello", 16)
+            text, token_count = provider.generate("Hello", 16)
 
-            assert result == " world this is text"
+            assert text == " world this is text"
+            assert isinstance(token_count, int)
+            assert token_count > 0
 
     def test_generate_raises_when_not_loaded(self, provider: TransformersProvider) -> None:
         with pytest.raises(RuntimeError, match="load_model"):

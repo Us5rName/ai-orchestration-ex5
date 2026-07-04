@@ -17,7 +17,7 @@ from airllm_benchmark.services.metrics import MetricsRecord
 def mock_provider() -> MagicMock:
     """Create a mock InferenceProvider for GPU tests."""
     provider = MagicMock()
-    provider.generate.return_value = "Generated output text for testing."
+    provider.generate.return_value = ("Generated output text for testing.", 10)
     return provider
 
 
@@ -40,6 +40,7 @@ def _mock_collector(mock_provider: MagicMock) -> None:
         ttft_s=0.5,
         total_runtime_s=1.0,
         tokens_generated=10,
+        generation_throughput=10.0,
         peak_ram_mb=100.0,
         peak_vram_mb=50.0,
         status="success",

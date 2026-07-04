@@ -9,7 +9,7 @@ from airllm_benchmark.services.metrics import MetricsRecord
 
 
 def test_record_contains_all_fields() -> None:
-    """Assert MetricsRecord has all 17 fields from CONFIG.md §1."""
+    """Assert MetricsRecord has all 18 fields from CONFIG.md §1."""
     record = MetricsRecord(
         run_id="run_001",
         model="test-model",
@@ -23,6 +23,7 @@ def test_record_contains_all_fields() -> None:
         ttft_s=2.0,
         total_runtime_s=3.0,
         tokens_generated=10,
+        generation_throughput=5.0,
         peak_ram_mb=100.0,
         peak_vram_mb=200.0,
         status="success",
@@ -33,6 +34,7 @@ def test_record_contains_all_fields() -> None:
     assert record.model == "test-model"
     assert record.mode == "gpu_provider"
     assert record.tokens_generated == 10
+    assert record.generation_throughput == 5.0
     assert record.peak_ram_mb == 100.0
     assert record.status == "success"
 
@@ -52,6 +54,7 @@ def test_record_is_frozen() -> None:
         ttft_s=0.0,
         total_runtime_s=0.0,
         tokens_generated=0,
+        generation_throughput=0.0,
         peak_ram_mb=0.0,
         peak_vram_mb=0.0,
         status="success",

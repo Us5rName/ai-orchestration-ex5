@@ -38,21 +38,22 @@ class TestTransformersProtocolCompliance:
             prov.load_model("gpt2")
             mock_model.to.assert_called_once_with("cuda")
 
-    def test_generate_returns_str(self) -> None:
-        """generate() returns a string."""
+    def test_generate_returns_tuple(self) -> None:
+        """generate() returns (text, token_count) tuple."""
         prov = TransformersProvider(device="cpu")
         with mock_transformers(tokenizer_decode="hello world") as (_tc, _mc, _mt, _mm):
             prov.load_model("gpt2", "cpu")
-            result = prov.generate("hello", 8)
-            assert isinstance(result, str)
+            text, token_count = prov.generate("hello", 8)
+            assert isinstance(text, str)
+            assert isinstance(token_count, int)
 
     def test_generate_strips_prompt(self) -> None:
         """generate() returns only the generated portion, not the prompt."""
         prov = TransformersProvider(device="cpu")
         with mock_transformers(tokenizer_decode="hello world") as (_tc, _mc, _mt, _mm):
             prov.load_model("gpt2", "cpu")
-            result = prov.generate("hello", 8)
-            assert result == " world"
+            text, _ = prov.generate("hello", 8)
+            assert text == " world"
 
     def test_unload_returns_none(self) -> None:
         """unload() returns None and does not raise."""
@@ -76,8 +77,8 @@ class TestProviderLifecycle:
 
         with mock_transformers(tokenizer_decode="input output") as (_tc, _mc, _mt, _mm):
             prov.load_model("gpt2", "cpu")
-            result = prov.generate("input", 8)
-            assert isinstance(result, str)
+            text, _ = prov.generate("input", 8)
+            assert isinstance(text, str)
 
         prov.unload()
 

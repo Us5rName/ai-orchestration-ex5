@@ -21,8 +21,8 @@ class _MockProvider:
     def load_model(self, model_id: str, device: str) -> None:
         pass
 
-    def generate(self, prompt: str, max_tokens: int) -> str:
-        return "mock"
+    def generate(self, prompt: str, max_tokens: int) -> tuple[str, int]:
+        return "mock", 4
 
     def unload(self) -> None:
         pass
@@ -62,10 +62,11 @@ class TestMockProviderCompliance:
         provider.load_model("test", "cpu")
 
     def test_mock_provider_generate(self) -> None:
-        """Mock provider generate returns string."""
+        """Mock provider generate returns (text, token_count) tuple."""
         provider = _MockProvider()
-        result = provider.generate("test", 10)
-        assert isinstance(result, str)
+        text, token_count = provider.generate("test", 10)
+        assert isinstance(text, str)
+        assert isinstance(token_count, int)
 
     def test_mock_provider_unload(self) -> None:
         """Mock provider unload does not raise."""

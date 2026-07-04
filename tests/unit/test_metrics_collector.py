@@ -39,6 +39,7 @@ def test_collector_full_lifecycle() -> None:
             max_tokens=32,
         )
         c.mark_load_complete()
+        c.mark_generation_start()
         c.stop()
         record = c.get_record(tokens_generated=10, status="success")
 
@@ -52,8 +53,10 @@ def test_collector_full_lifecycle() -> None:
     assert record.status == "success"
     assert record.error == ""
     assert record.load_time_s > 0
+    assert record.ttft_s > 0
     assert record.total_runtime_s > 0
     assert record.peak_ram_mb > 0
+    assert record.generation_throughput > 0
 
 
 def test_collector_error_record() -> None:

@@ -21,10 +21,12 @@ class TestCpuPath:
         prov = TransformersProvider(device="cpu")
         prov.load_model(TINY_MODEL, device="cpu")
 
-        result = prov.generate("Once upon a time", max_tokens=16)
+        text, token_count = prov.generate("Once upon a time", max_tokens=16)
 
-        assert isinstance(result, str)
-        assert len(result) > 0
+        assert isinstance(text, str)
+        assert len(text) > 0
+        assert isinstance(token_count, int)
+        assert token_count > 0
         prov.unload()
 
     def test_unload_after_cpu_run(self) -> None:
@@ -45,10 +47,12 @@ class TestGpuPath:
         prov = TransformersProvider(device="cuda")
         prov.load_model(TINY_MODEL, device="cuda")
 
-        result = prov.generate("Once upon a time", max_tokens=16)
+        text, token_count = prov.generate("Once upon a time", max_tokens=16)
 
-        assert isinstance(result, str)
-        assert len(result) > 0
+        assert isinstance(text, str)
+        assert len(text) > 0
+        assert isinstance(token_count, int)
+        assert token_count > 0
         prov.unload()
 
     def test_unload_after_cuda_run(self) -> None:

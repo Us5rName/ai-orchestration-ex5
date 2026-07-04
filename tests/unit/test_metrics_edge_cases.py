@@ -33,13 +33,15 @@ def test_collector_timing_accuracy() -> None:
         c = MetricsCollector(sampling_interval=0.1)
         c.start("m", "gpu_provider", "t", "p", "P1", "none", 32)
         c.mark_load_complete()
+        c.mark_generation_start()
         time.sleep(0.05)  # Ensure total > load_time
         c.stop()
         record = c.get_record(10, "success")
 
     assert record.load_time_s > 0
-    assert record.total_runtime_s > record.load_time_s
     assert record.ttft_s > 0
+    assert record.total_runtime_s > record.load_time_s
+    assert record.generation_throughput > 0
 
 
 def test_collector_reuse_after_stop() -> None:
@@ -56,12 +58,14 @@ def test_collector_reuse_after_stop() -> None:
         c = MetricsCollector(sampling_interval=0.1)
         c.start("m1", "gpu_provider", "t", "p", "P1", "none", 32)
         c.mark_load_complete()
+        c.mark_generation_start()
         c.stop()
         r1 = c.get_record(10, "success")
 
         # Reuse same collector instance
         c.start("m2", "cpu_baseline", "t", "p", "P2", "4bit", 16)
         c.mark_load_complete()
+        c.mark_generation_start()
         c.stop()
         r2 = c.get_record(5, "success")
 
