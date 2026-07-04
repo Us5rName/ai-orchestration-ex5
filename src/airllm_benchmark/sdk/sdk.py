@@ -9,10 +9,11 @@ Per docs/INTERFACES.md §1 and PLAN.md C3 Component Diagram.
 from __future__ import annotations
 
 import datetime
+from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from airllm_benchmark.sdk.runner import RunnerManager
+from airllm_benchmark.sdk.sdk_validation import ValidationResult, run_validation
 from airllm_benchmark.services.metrics import MetricsRecord
 from airllm_benchmark.services.result_writer import ResultWriter
 from airllm_benchmark.services.visualizer import VisualizationResult, Visualizer
@@ -23,9 +24,6 @@ from airllm_benchmark.shared.config import (
 )
 
 from . import sdk_helpers as _helpers
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 
 class BenchmarkSDK:
@@ -42,19 +40,14 @@ class BenchmarkSDK:
         self._config_dir = Path(config_dir) if config_dir else None
         self._runner_mgr = RunnerManager()
         self._visualizer = Visualizer()
-
     # ——— INTERFACES.md §1: run_benchmark ———
 
     def run_benchmark(self) -> dict:
         """Execute full benchmark pipeline across all modes.
 
-        Lifecycle:
-            1. Load and validate config
-            2. Clear previous results
-            3. Run every (model, mode, prompt) combination
-            4. Persist each result via ResultWriter
-            5. Generate visualizations
-            6. Return summary dict
+        Loads and validates config, clears prior results, runs every
+        (model, mode, prompt) combination, persists each result via
+        ResultWriter, then generates visualizations.
 
         Returns:
             dict with keys: summary, chart_paths, table_text
@@ -79,7 +72,6 @@ class BenchmarkSDK:
             "chart_paths": chart_paths,
             "table_text": table_text,
         }
-
     # ——— INTERFACES.md §1: run_single ———
 
     def run_single(
@@ -129,7 +121,6 @@ class BenchmarkSDK:
             max_tokens=config.max_new_tokens,
             quantization=quantization,
         )
-
     # ——— INTERFACES.md §1: generate_visualization ———
 
     def generate_visualization(
@@ -147,3 +138,13 @@ class BenchmarkSDK:
             VisualizationResult with chart_paths and table_text.
         """
         return _helpers.render_visualization(self._visualizer, records, output_dir)
+
+    # ——— docs/TODO.md task 7.4: pre-benchmark validation ———
+
+    def validate(self) -> ValidationResult:
+        """Validate config, providers, and model cache. Runs no inference.
+
+        Returns:
+            ValidationResult with config/provider/cache check outcomes.
+        """
+        return run_validation(self._config_dir)

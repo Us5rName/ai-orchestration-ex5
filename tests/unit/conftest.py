@@ -12,6 +12,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from airllm_benchmark.providers.llamacpp_provider import LlamaCppProvider
 from airllm_benchmark.providers.transformers_provider import (
     TransformersProvider,
 )
@@ -21,12 +22,55 @@ from tests.unit.fixtures_cli import mock_record  # noqa: F401
 from tests.unit.fixtures_metrics import sample_records  # noqa: F401
 
 _PROVIDER = "airllm_benchmark.providers.transformers_helpers"
+_LLAMACPP_HELPERS = "airllm_benchmark.providers.llamacpp_helpers"
 
 
 @pytest.fixture
 def provider() -> TransformersProvider:
     """Return a fresh provider with default device."""
     return TransformersProvider(device="cpu")
+
+
+@pytest.fixture
+def llamacpp_provider() -> LlamaCppProvider:
+    """Return a fresh LlamaCppProvider with default device."""
+    return LlamaCppProvider(device="cpu")
+
+
+@contextmanager
+def mock_llamacpp(
+    completion_text: str = "",
+    completion_tokens: int = 3,
+    include_usage: bool = True,
+) -> Iterator[tuple[MagicMock, MagicMock]]:
+    """Patch ``llama_cpp.Llama`` for LlamaCppProvider tests.
+
+    Configures both the constructor (local-path load) and
+    ``from_pretrained()`` (HF-Hub load) to return the same mock instance.
+
+    Args:
+        completion_text: Value for ``create_completion()``'s generated text.
+        completion_tokens: Token count reported in ``usage.completion_tokens``,
+            and used to size the ``tokenize()`` fallback return value.
+        include_usage: Whether the mocked response includes a ``usage`` dict.
+            Set ``False`` to exercise the ``tokenize()``-based fallback path.
+
+    Yields:
+        Tuple of (mock_llama_cls, mock_llm) — the patched ``Llama`` class
+        and the instance returned by both its constructor and
+        ``from_pretrained()``.
+    """
+    with patch(f"{_LLAMACPP_HELPERS}.Llama") as mock_llama_cls:
+        mock_llm = MagicMock()
+        response: dict = {"choices": [{"text": completion_text}]}
+        if include_usage:
+            response["usage"] = {"completion_tokens": completion_tokens}
+        mock_llm.create_completion.return_value = response
+        mock_llm.tokenize.return_value = list(range(max(1, completion_tokens)))
+        mock_llama_cls.return_value = mock_llm
+        mock_llama_cls.from_pretrained.return_value = mock_llm
+
+        yield mock_llama_cls, mock_llm
 
 
 @contextmanager

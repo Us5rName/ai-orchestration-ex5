@@ -2,7 +2,7 @@
 
 | Metadata      | Value                                  |
 | ------------- | -------------------------------------- |
-| **Version**   | 1.04                                   |
+| **Version**   | 1.05                                   |
 | **Created**   | 2026-07-04                             |
 | **Purpose**   | Track gaps between docs, interfaces, and TODO |
 
@@ -48,14 +48,14 @@
 
 ---
 
-## 4. Additional Providers — Out of Scope
+## 4. Additional Providers — llama.cpp Implemented; Ollama Still Out of Scope
 
 | Attribute | Detail |
 |-----------|--------|
 | **Found in** | `PLAN.md` C3 Component Diagram (§1.3, lines 95-99), C4 Code Structure (§1.4, lines 134-138), ADR-003 (§5, lines 265-266), `INTERFACES.md` §2 (provider implementations table, lines 91-96), `CLAUDE.md` §3 (package layout, lines 46-56) |
-| **Also in** | `src/airllm_benchmark/providers/` (only `transformers_provider.py` exists) |
-| **Missing from** | Implementation — no `ollama_provider.py`, no `llamacpp_provider.py` |
-| **Description** | PLAN.md and INTERFACES.md document three provider implementations: Ollama, Transformers, and llama.cpp. Only `TransformersProvider` is implemented. `create_provider()` in `sdk_helpers.py` raises `ValueError` for any provider other than `"transformers"`. The additional providers are out of scope for the current exercise — the benchmark focuses on comparing GPU (via Transformers), CPU baseline (via Transformers), and AirLLM paged inference. Ollama and llama.cpp providers are documented as planned components but are not required for the benchmark's core comparison. |
-| **Impact** | Low — the benchmark functions correctly with Transformers as the sole provider. The provider abstraction layer exists and can accommodate additional providers when in scope. |
-| **Resolution** | Accept as out of scope. Update PLAN.md C3/C4, INTERFACES.md §2, and ADR-003 to explicitly mark ollama and llamacpp as "future extension" rather than required components. Keep `InferenceProvider` protocol intact for extensibility. |
-| **Status** | 🔲 Deferred |
+| **Also in** | `src/airllm_benchmark/providers/` (`transformers_provider.py`, `llamacpp_provider.py` + `llamacpp_helpers.py` now exist) |
+| **Missing from** | Implementation — no `ollama_provider.py` (removed per Inconsistency #1; still intentionally out of scope) |
+| **Description** | PLAN.md and INTERFACES.md document three provider implementations: Ollama, Transformers, and llama.cpp. Per TODO.md task 3.5, `LlamaCppProvider` has now been implemented for completeness (wraps `llama_cpp.Llama`, supports local `.gguf` paths and HF-Hub `"repo_id::filename"` identifiers, maps `device` to `n_gpu_layers`, routes HF-Hub fetches through the API Gatekeeper). It is unit-tested (36 tests, 100% coverage on both llamacpp files) but is **not yet wired into `sdk/sdk_helpers.py`'s `create_provider()` factory or `config/experiment.json`** — the benchmark's core GPU/CPU/AirLLM comparison still runs exclusively through Transformers, so no config or SDK changes were made as part of this pass. Ollama remains unimplemented and out of scope; it was intentionally removed (see Inconsistency #1) in favor of Transformers as the GPU provider. |
+| **Impact** | Low — the benchmark functions correctly with Transformers as the sole wired provider. `LlamaCppProvider` is available for future use (e.g. a future `experiment.json` provider selection) without further protocol changes. Ollama has no implementation and no near-term plan to add one. |
+| **Resolution** | llama.cpp: ✅ implemented per TODO 3.5; wiring into `create_provider()`/config selection deferred to whenever a llama.cpp-backed run is actually needed. Ollama: remains accepted as out of scope — update PLAN.md C3/C4 and ADR-003 to mark ollama specifically (not llama.cpp) as "future extension" if those diagrams are revisited. |
+| **Status** | 🟡 Partially Resolved — llama.cpp implemented; Ollama still deferred |

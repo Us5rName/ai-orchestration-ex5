@@ -46,9 +46,9 @@
 | 3.4.1 | Verify GPU execution with real CUDA test | 3.4 | ✅ Done | RTX 4080 SUPER test: tiny model loads on cuda:0, generates text, unloads |
 | 3.4.2 | Verify CPU execution with real test | 3.4 | ✅ Done | CPU test: tiny model loads, generates text, unloads |
 | ⚠️ | | | | **Caution:** Transformers imports PyTorch. Test with mocked model to avoid downloading weights during unit tests. |
-| 3.5 | Implement `providers/llamacpp_provider.py` — llama.cpp Python bindings | 3.2 | Not Started | Implements `InferenceProvider` |
+| 3.5 | Implement `providers/llamacpp_provider.py` — llama.cpp Python bindings | 3.2 | ✅ Done | Implements `InferenceProvider`; wraps `llama_cpp.Llama` (thin provider + `llamacpp_helpers.py` split for model-source resolution/loading, matching the transformers pattern); supports local `.gguf` paths and `"repo_id::filename"` HF-Hub identifiers via `from_pretrained()`; `device` mapped to `n_gpu_layers` (`0` = CPU, `-1` = full GPU offload); HF-Hub fetch routed through `call_with_rate_limit("huggingface", ...)`; `uv sync` built `llama-cpp-python` cleanly, no toolchain blockers hit |
 | ⚠️ | | | | **Caution:** Each provider wraps a different runtime (HTTP, PyTorch, native bindings). Test isolation is critical — mock all external calls. |
-| 3.6 | `tests/unit/test_providers.py` — provider interface tests | 3.3, 3.4, 3.5 | ✅ Done | Tests protocol compliance; all external calls mocked (split into `test_providers.py` + `test_provider_lifecycle.py`) |
+| 3.6 | `tests/unit/test_providers.py` — provider interface tests | 3.3, 3.4, 3.5 | ✅ Done | Tests protocol compliance; all external calls mocked (split into `test_providers.py` + `test_provider_lifecycle.py` + `test_llamacpp_load.py`/`test_llamacpp_generate.py`/`test_llamacpp_unload.py`/`test_llamacpp_lifecycle.py`, 36 llama.cpp tests, 100% coverage on both llamacpp files) |
 | 3.7 | Implement `shared/gatekeeper.py` + `config/rate_limits.json` — rate-limited external calls per `CLAUDE.md` §3 | 2.3 | ✅ Done | `call_with_rate_limit()` wraps HF Hub calls in `transformers_helpers.py` and `airllm_loader.py`; never raises on overflow |
 | 3.8 | `tests/unit/test_gatekeeper.py` — gatekeeper tests | 3.7 | ✅ Done | Tests RateLimiter timing (mocked clock), config loading, exception propagation; 9 tests pass |
 
@@ -184,12 +184,12 @@ When an integration checkpoint fails:
 
 | #  | Task | Depends | Status | Definition of Done |
 |----|------|---------|--------|-------------------|
-| 7.1 | Handle gated model access — accept HuggingFace terms for Llama models | 1.3 | Not Started | Model accessible via HF API; token in `.env` |
-| ⚠️ | | | | **Caution:** Gated models (Llama) require manual term acceptance on HuggingFace before any API access works. |
-| 7.2 | Pre-download all models to HF cache | 7.1 | Not Started | All three model tiers cached locally; no network needed during benchmarks |
-| ⚠️ | | | | **Caution:** 72B model download is large (~140 GB unquantized). Verify disk space before starting. |
+| 7.1 | Handle gated model access — accept HuggingFace terms for Llama models | 1.3 | ✅ N/A — resolved, no action needed | **Moot.** `docs/PRD.md` §7.1's model-selection table names `meta-llama/Llama-3.2-1B` as the illustrative "small" tier example, but the *actual* configured models in `config/experiment.json` are all open, ungated Qwen checkpoints (`Qwen/Qwen2.5-0.5B-Instruct`, `Qwen/Qwen2.5-3B-Instruct`, `Qwen/Qwen2.5-7B-Instruct`) — confirmed by inspection 2026-07-04. None require HF gated-access term acceptance. A separate PR's CI run independently hit a 401 from `meta-llama/Llama-3.2-1B` with no `HF_TOKEN` configured, which is what prompted this check — but that model is not referenced anywhere the benchmark actually runs. No programmatic term-acceptance was attempted (that requires a human to click "Agree" on huggingface.co); none was needed. If a gated model is reintroduced later, the user must visit its HF page, accept terms, and set `HF_TOKEN` in `.env` before this task can be closed the "real" way. |
+| ⚠️ | | | | **Caution:** Gated models (Llama) require manual term acceptance on HuggingFace before any API access works. Not applicable to the current config. |
+| 7.2 | Pre-download all models to HF cache | 7.1 | ✅ Done (small, medium, large all cached) | All three configured tiers loaded end-to-end (`load_model` → `generate` → `unload`) through `TransformersProvider` on 2026-07-04: `Qwen/Qwen2.5-0.5B-Instruct` (small, ~2.27 GB, ~3.4s), `Qwen/Qwen2.5-3B-Instruct` (medium, ~6.18 GB, ~61s incl. download), `Qwen/Qwen2.5-7B-Instruct` (large, ~15.24 GB, ~143s incl. download). Verified present via `huggingface_hub.scan_cache_dir()` (26.17 GB total cache). Network access confirmed working in this sandbox (no CUDA available here — driver too old for the installed torch build — so loads used `device="cpu"`; that's sufficient for caching weights, which is this task's goal). No 72B model in scope — current config caps at 7B (see 7.1 note), so the "~140 GB / verify disk space" caution below does not apply as originally written. |
+| ⚠️ | | | | **Caution:** Original caution assumed a 72B model; current config's largest tier is 7B (~15 GB). Disk was not a constraint (1.6 TB free). |
 | 7.3 | Fill in `config/hardware.json` with actual machine specs | 2.2 | ✅ Done | All fields populated; no empty values |
-| 7.4 | POC: config + provider validation | 2.3, 3.3, 3.4, 7.2, 7.3 | Not Started | SDK validates config is consistent, provider is reachable, models are cached — no inference executed |
+| 7.4 | POC: config + provider validation | 2.3, 3.3, 3.4, 7.2, 7.3 | ✅ Done | Reused existing `validate_config()`/`validate_hardware()` in `shared/config_loader.py` rather than duplicating. Added `BenchmarkSDK.validate()` (`sdk/sdk_validation.py`, `ValidationResult`) which: (1) loads + validates `experiment.json`/`hardware.json`, never raising — failures are captured in `ValidationResult.config_error`; (2) instantiates each configured provider (`gpu_provider`, `cpu_baseline_provider`) via the existing `create_provider()` factory with **no** `load_model()`/`generate()` call, so no inference runs; (3) reports HF-cache presence per model via new `shared/cache_check.py::model_cache_status()` (`huggingface_hub.scan_cache_dir()`) — informational only, does not fail validation. Wired into CLI as `uv run python main.py --validate` (see `docs/INTERFACES.md` §10). Unit tests in `tests/unit/test_sdk_validation.py`, `tests/unit/test_cache_check.py`, `tests/unit/test_cli_validate.py` — all external calls mocked, no real downloads. Manually verified against the real cached models: reports PASSED with all three tiers cached. |
 | ⚠️ | | | | **Caution:** This step catches misconfiguration before expensive benchmark runs. Do not skip. |
 
 ---
@@ -218,7 +218,7 @@ When an integration checkpoint fails:
 | 9.3 | Run `ruff check` — zero violations | 6.2 | ✅ Done | `uv run ruff check` returns 0 (`src tests scripts`); gated in CI |
 | 9.4 | Verify no file exceeds 150 lines | 6.2 | ✅ Done | All `.py` files ≤ 150 lines; gated in CI via `scripts/check_line_cap.py` |
 | 9.5 | Update `README.md` — installation, usage, configuration, examples | 8.6 | ✅ Done | Adopted hw5-bundle starter README with generated repo-facts region |
-| 9.6 | `tests/integration/test_pipeline.py` — full pipeline smoke test | 5.7 | Not Started | Runs small model via configured provider; validates metrics output |
+| 9.6 | `tests/integration/test_pipeline.py` — full pipeline smoke test | 5.7 | ✅ Done | Drives `BenchmarkSDK.run_single()` (real entry point, not mocked) end-to-end with a real `Qwen/Qwen2.5-0.5B-Instruct` via `TransformersProvider` on CPU (isolated `experiment.json` fixture keeps `max_new_tokens` tiny); asserts `MetricsRecord.status == "success"` plus timing/token/RAM invariants; 1 test, runs in ~11s |
 | 9.7 | Run final checklist per [`final-checklist`](.agents/skills/final-checklist/SKILL.md) | 9.2, 9.3, 9.4, 9.5 | Not Started | All checklist items pass |
 
 ---
@@ -229,11 +229,11 @@ When an integration checkpoint fails:
 |-------|-------|--------|
 | 1 — Scaffolding | 4 | 4/4 Done |
 | 2 — Configuration | 5 | 5/5 Done |
-| 3 — Providers | 9 | 8/9 Done (3.5 llama.cpp not started; 3.3 ollama removed, excluded from count) |
+| 3 — Providers | 9 | 9/9 Done (3.3 ollama removed, excluded from count) |
 | 4 — Services | 5 | 5/5 Done |
 | 5 — SDK (Runners) | 8 | 8/8 Done |
 | 6 — CLI | 2 | 2/2 Done |
-| 7 — Pre-Benchmark | 4 | 1/4 Done |
+| 7 — Pre-Benchmark | 4 | 4/4 Done (7.1 resolved as N/A — see task note) |
 | 8 — Benchmark Execution | 6 | 0/6 Done |
-| 9 — Analysis & Documentation | 7 | 4/7 Done |
-| **Total** | **50** | **37/50 Done** |
+| 9 — Analysis & Documentation | 7 | 5/7 Done |
+| **Total** | **50** | **42/50 Done** |
