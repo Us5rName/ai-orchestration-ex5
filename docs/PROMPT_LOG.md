@@ -916,4 +916,41 @@
 
 ---
 
+## Entry 34 — Task 5.1: InferenceRunner Protocol + RunnerManager
+
+**Prompt:** "start 5.1. Use Implementation.md and what you were thaught and your skills and check gate"
+
+**Context:** Task 5.1 requires implementing `sdk/runner.py` with the `InferenceRunner` protocol and `RunnerManager` class per INTERFACES.md §3.
+
+**Pre-Implementation Gate:**
+- ✅ INTERFACES.md §3 defines `InferenceRunner` protocol (1 method: `run()`)
+- ✅ Dependencies satisfied: 3.2 (providers/base.py), 2.3 (shared/config.py)
+- ✅ `MetricsRecord` available in `services/metrics.py`
+- ✅ Gate passed — no gaps or ambiguities
+
+**TDD Flow (RED → GREEN → REFACTOR):**
+- **RED:** Wrote `tests/unit/test_runner_protocol.py` (9 tests), ran → failed (import error + logic gaps)
+- **GREEN:** Implemented `sdk/runner.py` with `InferenceRunner` protocol + `RunnerManager`
+- **REFACTOR:** Fixed ruff UP037 violations, updated tests for mocked lazy init
+
+**Decisions:**
+- `RunnerManager` uses lazy initialization — runners imported on first `get_runner()` call
+- Lazy init avoids circular imports and defers runner module loading until needed
+- Tests mock runner modules via `patch.dict("sys.modules", ...)` since actual runners (5.2-5.5) don't exist yet
+- Unknown mode raises `ValueError` with descriptive message listing valid modes
+
+**Changes:**
+- Created `src/airllm_benchmark/sdk/runner.py` — `InferenceRunner` protocol + `RunnerManager` (111 lines)
+- Created `tests/unit/test_runner_protocol.py` — 9 tests covering protocol + manager dispatch
+- Updated `src/airllm_benchmark/sdk/__init__.py` — exports `InferenceRunner`, `RunnerManager`
+- Updated `docs/TODO.md` — marked 5.1 as Done
+- Updated `docs/PROMPT_LOG.md` — this entry
+
+**Validation:**
+- `uv run pytest tests/unit/test_runner_protocol.py` → 9/9 passed
+- `uv run ruff check` → 0 violations
+- Both files under 150 lines (111 + 124)
+
+---
+
 ## Summary of Documents
