@@ -8,6 +8,7 @@ Per docs/INTERFACES.md §1 and PLAN.md C3 Component Diagram.
 
 from __future__ import annotations
 
+import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -62,7 +63,10 @@ class BenchmarkSDK:
         hw = load_hardware(self._config_dir)
         validate_hardware(hw)
 
-        writer = ResultWriter("results/metrics.json")
+        output_path = (
+            Path("results") / f"metrics_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        )
+        writer = ResultWriter(str(output_path))
         writer.clear()
 
         records = _helpers._run_benchmark_impl(config, self._runner_mgr, writer)
