@@ -1436,4 +1436,37 @@ Status:         success
 
 ---
 
+## Entry 45 — Task 5.7: BenchmarkSDK Entry Point
+
+**Prompt:** "start 5.7. Use Implementation.md and what you were thaught and your skills and check gate. When finishing the module, create a PoC that uses the module."
+
+**Context:** Task 5.7 requires implementing `sdk/sdk.py` — the `BenchmarkSDK` single entry point per `INTERFACES.md` §1. Dependencies (5.1, 5.2, 5.3, 5.5, 4.4) were all Done. Pre-Implementation Gate confirmed interface exists and is clear. ResultWriter was identified as architecturally required per `PLAN.md` C3 + Sequence Diagram and added as dependency.
+
+**Approach:** Followed `IMPLEMENTATION.md` three-step process:
+1. **Library PoC** — Skipped (SDK orchestrates existing modules, no external library)
+2. **Feature PoCs** — Created `pocs/sdk_module_poc.py` with 3 PoC tests exercising all interface methods
+3. **Full Module** — Implemented `sdk.py` (135 lines) + `sdk_helpers.py` (121 lines) split to stay under 150-line limit. Tests split by interface method following project pattern (like `test_transformers_load.py`, `test_transformers_generate.py`, etc.)
+
+**Changes:**
+- Created `src/airllm_benchmark/sdk/sdk.py` — `BenchmarkSDK` with `run_benchmark()`, `run_single()`, `generate_visualization()`
+- Created `src/airllm_benchmark/sdk/sdk_helpers.py` — `create_provider()`, `_run_benchmark_impl()`, `_resolve_provider()`, `build_summary()`
+- Created `tests/unit/test_sdk_init.py` — 4 init tests
+- Created `tests/unit/test_sdk_run_benchmark.py` — 3 run_benchmark tests
+- Created `tests/unit/test_sdk_run_single.py` — 3 run_single tests
+- Created `tests/unit/test_sdk_visualization.py` — 2 visualization tests
+- Updated `tests/unit/conftest.py` — added `mock_config`, `mock_hw` fixtures
+- Created `pocs/sdk_module_poc.py` — 3 PoC tests
+- Updated `docs/TODO.md` — added ResultWriter dependency, marked 5.7 Done
+
+**Validation:**
+- `uv run ruff check` → 0 violations
+- `uv run pytest tests/unit/` → 177 passed (12 SDK tests + 165 existing)
+- PoC tests → 3 passed
+- All files ≤ 150 lines
+- No hardcoded config — all loaded from `experiment.json`
+
+**Note:** PoC uses real config but mocked runners. Full real-data PoC deferred pending user direction.
+
+---
+
 ## Summary of Documents
