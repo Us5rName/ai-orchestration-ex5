@@ -1562,4 +1562,19 @@ Status:         success
 
 ---
 
+## Entry 49 — Prompt Log + Commit
+
+**Prompt:** "Add what you did to prompt log and commit"
+
+**Context:** Bug fixes (device mismatch + model resolution) were already documented in Entry 48 and committed as `913d96c`. Only `src/main.py` remained uncommitted with improved output formatting.
+
+**Changes:**
+- `docs/PROMPT_LOG.md` — Added Entry 49 (this entry).
+- `src/main.py` — Already staged: improved `_print_result()` with sectioned output (Timing, Generation, Memory), status icon, and timestamp.
+
+**Validation:**
+- `uv run python src/main.py --single --model small --mode cpu_baseline --prompt "What is AI?"` → success with formatted output.
+
+---
+
 ## Summary of Documents

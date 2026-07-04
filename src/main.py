@@ -10,6 +10,7 @@ import argparse
 from pathlib import Path
 
 from airllm_benchmark.sdk.sdk import BenchmarkSDK
+from airllm_benchmark.services.metrics import MetricsRecord
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -67,15 +68,54 @@ def run_single(args: argparse.Namespace) -> None:
         prompt=args.prompt,
     )
 
-    print(f"Model:       {record.model}")
-    print(f"Mode:        {record.mode}")
-    print(f"Provider:    {record.provider}")
-    print(f"Status:      {record.status}")
-    print(f"Runtime:     {record.total_runtime_s:.2f}s")
-    print(f"Tokens:      {record.tokens_generated}")
-    print(f"Peak RAM:    {record.peak_ram_mb:.0f} MB")
+    _print_result(record)
+
+
+def _print_result(record: MetricsRecord) -> None:
+    """Print a formatted metrics result with sections.
+
+    Args:
+        record: MetricsRecord from the inference run.
+    """
+    print("=" * 60)
+    print("  Inference Result")
+    print("=" * 60)
+
+    print(f"  Model:        {record.model}")
+    print(f"  Mode:         {record.mode}")
+    print(f"  Provider:     {record.provider}")
+    print(f"  Quantization: {record.quantization}")
+    print(f"  Prompt:       {record.prompt}")
+    print()
+
+    print("  Timing")
+    print("  " + "-" * 40)
+    print(f"  Load time:       {record.load_time_s:.2f}s")
+    print(f"  TTFT:            {record.ttft_s:.2f}s")
+    print(f"  Total runtime:   {record.total_runtime_s:.2f}s")
+    print()
+
+    print("  Generation")
+    print("  " + "-" * 40)
+    print(f"  Max new tokens:  {record.max_new_tokens}")
+    print(f"  Tokens generated:{record.tokens_generated}")
+    print(f"  Throughput:      {record.generation_throughput:.1f} tok/s")
+    print()
+
+    print("  Memory")
+    print("  " + "-" * 40)
+    print(f"  Peak RAM:  {record.peak_ram_mb:.0f} MB")
+    if record.peak_vram_mb > 0:
+        print(f"  Peak VRAM: {record.peak_vram_mb:.0f} MB")
+    print()
+
+    icon = "✓" if record.status == "success" else "✗"
+    print(f"  Status:  {icon} {record.status}")
     if record.error:
-        print(f"Error:       {record.error}")
+        print(f"  Error:   {record.error}")
+    print()
+    print(f"  Timestamp: {record.timestamp}")
+    print("=" * 60)
 
 
 def main(argv: list[str] | None = None) -> None:
