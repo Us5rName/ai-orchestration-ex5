@@ -2,9 +2,9 @@
 
 | Metadata      | Value                                  |
 | ------------- | -------------------------------------- |
-| **Version**   | 1.02                                   |
+| **Version**   | 1.03                                   |
 | **Based on**  | `docs/PRD.md` v1.00, `docs/PLAN.md` v1.00 |
-| **Changes**   | Added §6 Visualizer, §7 VisualizationResult; updated §1 SDK |
+| **Changes**   | Added `quantization` param to §1 SDK, §3 Runner; updated §2 Provider |
 
 ---
 
@@ -24,7 +24,8 @@ class BenchmarkSDK:
         """
 
     def run_single(self, model_id: str, mode: str, prompt: str,
-                   provider: str | None = None) -> MetricsRecord:
+                   provider: str | None = None,
+                   quantization: str = "none") -> MetricsRecord:
         """Run a single inference and return metrics.
 
         Args:
@@ -32,6 +33,7 @@ class BenchmarkSDK:
             mode: one of "gpu_provider", "cpu_baseline", "airllm"
             provider: inference provider (default from config)
             prompt: input text
+            quantization: quantization level ("4bit", "8bit", "none")
 
         Returns:
             MetricsRecord from this run.
@@ -106,7 +108,8 @@ class InferenceRunner(Protocol):
     """Interface for all inference runners."""
 
     def run(self, provider: InferenceProvider, model_id: str,
-            prompt: str, max_tokens: int) -> MetricsRecord:
+            prompt: str, max_tokens: int,
+            quantization: str = "none") -> MetricsRecord:
         """Execute one inference run and return metrics.
 
         Args:
@@ -114,6 +117,7 @@ class InferenceRunner(Protocol):
             model_id: HuggingFace model identifier
             prompt: input text
             max_tokens: maximum tokens to generate
+            quantization: quantization level ("4bit", "8bit", "none")
 
         Returns:
             MetricsRecord from this run.

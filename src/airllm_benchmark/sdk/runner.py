@@ -34,6 +34,7 @@ class InferenceRunner(Protocol):
         model_id: str,
         prompt: str,
         max_tokens: int,
+        quantization: str = "none",
     ) -> MetricsRecord:
         """Execute one inference run and return metrics.
 
@@ -42,6 +43,7 @@ class InferenceRunner(Protocol):
             model_id: HuggingFace model identifier.
             prompt: Input text to complete.
             max_tokens: Maximum tokens to generate.
+            quantization: Quantization level ("4bit", "8bit", "none").
 
         Returns:
             MetricsRecord from this run.
