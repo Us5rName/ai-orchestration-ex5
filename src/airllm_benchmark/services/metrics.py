@@ -2,45 +2,23 @@
 
 Tracks timing, RAM, and VRAM during a single inference run.
 Per INTERFACES.md §4-§5.
+
+Separation of concerns:
+    - MetricsRecord (data contract) lives in metrics_helpers.py
+    - MetricsCollector (service) lives here
 """
 
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
-from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+from . import metrics_helpers as _helpers
 from . import metrics_sampler as _sampler
+from .metrics_helpers import MetricsRecord
 
 if TYPE_CHECKING:
     from typing import Any
-
-
-@dataclass(frozen=True)
-class MetricsRecord:
-    """Single metrics record from one inference run.
-
-    Matches CONFIG.md §1 schema exactly.
-    """
-
-    run_id: str
-    model: str
-    mode: str
-    provider: str
-    prompt: str
-    prompt_id: str
-    quantization: str
-    max_new_tokens: int
-    load_time_s: float
-    ttft_s: float
-    total_runtime_s: float
-    tokens_generated: int
-    peak_ram_mb: float
-    peak_vram_mb: float
-    status: str
-    error: str
-    timestamp: str
 
 
 class MetricsCollector:
@@ -49,7 +27,9 @@ class MetricsCollector:
     Usage:
         c = MetricsCollector()
         c.start(model_id, mode, provider, prompt, pid, quant, max_tok)
+        c.mark_download_complete()   # optional — separate download from transfer
         c.mark_load_complete()
+        c.mark_generation_start()    # marks TTFT boundary
         # ... generate ...
         c.stop()
         record = c.get_record(tokens, status, error)
@@ -63,7 +43,9 @@ class MetricsCollector:
         """
         self._ram = _sampler.RamSampler(interval=sampling_interval)
         self._start_time: float = 0.0
+        self._download_time: float = 0.0
         self._load_time: float = 0.0
+        self._gen_start_time: float = 0.0
         self._stop_time: float = 0.0
         self._ctx: dict[str, Any] = {}
 
@@ -88,14 +70,31 @@ class MetricsCollector:
             "max_tokens": max_tokens,
         }
         self._start_time = time.perf_counter()
+        self._download_time = 0.0
         self._load_time = 0.0
+        self._gen_start_time = 0.0
         self._stop_time = 0.0
         _sampler.VramTracker.reset()
         self._ram.start()
 
+    def mark_download_complete(self) -> None:
+        """Mark HF download complete. Separates download from GPU transfer."""
+        self._download_time = time.perf_counter() - self._start_time
+
     def mark_load_complete(self) -> None:
-        """Mark model loading as complete. Captures load_time_s."""
-        self._load_time = time.perf_counter() - self._start_time
+        """Mark model loading as complete. Captures load_time_s.
+
+        If mark_download_complete was called, load_time_s = transfer only.
+        Otherwise load_time_s = total time since start (includes download).
+        """
+        if self._download_time > 0:
+            self._load_time = time.perf_counter() - (self._start_time + self._download_time)
+        else:
+            self._load_time = time.perf_counter() - self._start_time
+
+    def mark_generation_start(self) -> None:
+        """Mark generation start. Used to compute TTFT and throughput."""
+        self._gen_start_time = time.perf_counter()
 
     def stop(self) -> None:
         """Stop memory sampling and finalize timing."""
@@ -110,6 +109,9 @@ class MetricsCollector:
     ) -> MetricsRecord:
         """Assemble metrics record from stored context + results.
 
+        Delegates to :func:`metrics_helpers.assemble_record` which
+        computes TTFT and generation throughput from internal timers.
+
         Args:
             tokens_generated: Number of tokens produced.
             status: Run status (success, oom, timeout).
@@ -118,23 +120,15 @@ class MetricsCollector:
         Returns:
             MetricsRecord matching CONFIG.md §1 schema.
         """
-        total = self._stop_time - self._start_time
-        return MetricsRecord(
-            run_id=f"run_{id(self):x}",
-            model=self._ctx.get("model_id", ""),
-            mode=self._ctx.get("mode", ""),
-            provider=self._ctx.get("provider", ""),
-            prompt=self._ctx.get("prompt", ""),
-            prompt_id=self._ctx.get("prompt_id", ""),
-            quantization=self._ctx.get("quantization", ""),
-            max_new_tokens=int(self._ctx.get("max_tokens", 0)),
-            load_time_s=round(self._load_time, 4),
-            ttft_s=round(self._load_time, 4),
-            total_runtime_s=round(total, 4),
+        return _helpers.assemble_record(
+            collector_id=id(self),
+            ctx=self._ctx,
+            load_time=self._load_time,
+            gen_start_time=self._gen_start_time,
+            start_time=self._start_time,
+            stop_time=self._stop_time,
             tokens_generated=tokens_generated,
-            peak_ram_mb=round(self._ram.peak_mb(), 2),
-            peak_vram_mb=round(_sampler.VramTracker.peak_mb(), 2),
+            peak_ram_mb=self._ram.peak_mb(),
             status=status,
             error=error,
-            timestamp=datetime.now(UTC).isoformat(),
         )
