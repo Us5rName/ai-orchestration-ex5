@@ -16,10 +16,11 @@ from airllm_benchmark.providers.transformers_provider import (
     TransformersProvider,
 )
 
-# Import sample_records fixture so pytest discovers it
+# Import sample_records/mock_record fixtures so pytest discovers them
+from tests.unit.fixtures_cli import mock_record  # noqa: F401
 from tests.unit.fixtures_metrics import sample_records  # noqa: F401
 
-_PROVIDER = "airllm_benchmark.providers.transformers_provider"
+_PROVIDER = "airllm_benchmark.providers.transformers_helpers"
 
 
 @pytest.fixture

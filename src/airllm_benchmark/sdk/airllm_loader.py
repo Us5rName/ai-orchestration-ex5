@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from airllm_benchmark.shared.gatekeeper import call_with_rate_limit
+
 if TYPE_CHECKING:
     from airllm import AutoModel
 
@@ -47,8 +49,10 @@ def load_model(model_id: str, quantization: str = "none") -> AutoModel:
     # AirLLM loads weights on-demand; from_pretrained returns immediately
     # with a paged model reference rather than loading all weights at once.
     if compression:
-        return AutoModel.from_pretrained(model_id, compression=compression)
-    return AutoModel.from_pretrained(model_id)
+        return call_with_rate_limit(
+            "huggingface", lambda: AutoModel.from_pretrained(model_id, compression=compression)
+        )
+    return call_with_rate_limit("huggingface", lambda: AutoModel.from_pretrained(model_id))
 
 
 def _resolve_compression(quantization: str) -> str:

@@ -101,9 +101,11 @@ C4Component
 
     Boundary(config_boundary, "Configuration") {
         Component(config_loader, "Config Loader", "Python", "Loads experiment.json + hardware.json")
+        Component(gatekeeper, "API Gatekeeper", "Python", "Rate-limits external calls per rate_limits.json")
     }
 
     Rel(sdk_entry, config_loader, "Loads config", "")
+    Rel(transformers_provider, gatekeeper, "Routes HF Hub calls through", "")
     Rel(sdk_entry, runner_mgr, "Dispatches run", "")
     Rel(runner_mgr, gpu_runner, "Executes", "")
     Rel(runner_mgr, cpu_runner, "Executes", "")
@@ -143,12 +145,14 @@ src/airllm_benchmark/
 ├── shared/
 │   ├── __init__.py
 │   ├── config.py               # Config loader (JSON + .env)
+│   ├── gatekeeper.py            # Rate-limited external calls (CLAUDE.md §3)
 │   └── version.py              # Version tracking (1.00)
 └── constants.py                # Enums, physical constants
 
 config/
 ├── experiment.json             # Models, prompts, providers, quantization
-└── hardware.json               # Documented hardware specs
+├── hardware.json               # Documented hardware specs
+└── rate_limits.json            # Per-service calls-per-minute ceilings
 
 results/
 └── metrics.json                # Collected benchmark results
@@ -295,6 +299,27 @@ See [`docs/INTERFACES.md`](INTERFACES.md) for the full contract:
 **Consequences:**
 - Pros: Lightweight, cross-platform, well-tested
 - Cons: Sampling may miss brief spikes (acceptable for this exercise)
+
+### ADR-006: API Gatekeeper for Rate-Limited External Calls
+
+**Status:** Accepted
+**Date:** 2026-07-04
+
+**Context:** CLAUDE.md §3 mandates that all external API calls (HuggingFace
+Hub downloads, provider HTTP calls) flow through a single rate-limited
+gatekeeper so the benchmark never crashes due to upstream rate limits.
+
+**Decision:** Introduce `shared/gatekeeper.py` with a single entry point,
+`call_with_rate_limit(service, fn)`, backed by a per-service `RateLimiter`
+configured via `config/rate_limits.json`. The two real external-call sites —
+`TransformersProvider.load_model` (via `transformers_helpers.load_tokenizer_and_model`)
+and `airllm_loader.load_model` — route their HF Hub calls through it. The
+benchmark runs single-threaded, so calls are already issued in FIFO order;
+an overflow call simply blocks in `RateLimiter.acquire()` rather than raising.
+
+**Consequences:**
+- Pros: One place to tune/observe external call pacing; never crashes on rate limits
+- Cons: Slight latency overhead per call; config file to keep in sync with new external call sites
 
 ---
 

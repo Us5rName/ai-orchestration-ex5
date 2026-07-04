@@ -1,0 +1,72 @@
+name: CI
+
+# Adapted from ai-orchestration ex04/ex06 CI. This project has no submodule
+# and its unit tests are keyless (all external libraries mocked), so CI is a
+# single job: quality gates + the mocked test suite with a coverage gate.
+#
+# Note: a few real-model tests (tests/pocs/*, test_transformers_device.py)
+# download tiny models from HuggingFace and therefore need network access.
+# GitHub-hosted runners provide it; they are skipped automatically offline.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Quality gates + tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install Python
+        run: uv python install 3.12
+
+      - name: Sync dependencies
+        run: uv sync --all-extras
+
+      - name: Ruff lint
+        run: uv run ruff check src tests scripts
+
+      - name: Line cap (src+tests raw, scripts logical)
+        run: |
+          uv run python scripts/check_line_cap.py src tests --limit 150 --mode raw
+          uv run python scripts/check_line_cap.py scripts --limit 150 --mode logical
+
+      - name: Project invariants (paths, layering, config)
+        run: uv run python scripts/validate_repo.py
+
+      - name: Secret scan
+        run: uv run python scripts/check_no_secrets.py
+
+      - name: Required docs present
+        run: uv run python scripts/check_docs_present.py
+
+      - name: Markdown link check
+        run: uv run python scripts/check_markdown_links.py
+
+      - name: No tracked archives
+        run: uv run python scripts/check_source_archives.py
+
+      - name: Unique task IDs
+        run: uv run python scripts/check_planning_ids.py
+
+      - name: Workflow permissions minimal
+        run: uv run python scripts/check_workflow_permissions.py
+
+      - name: README generated facts sync
+        run: uv run python scripts/readme_sync.py check
+
+      - name: Tests with coverage gate
+        run: uv run pytest --cov=airllm_benchmark --cov-report=term-missing --cov-fail-under=85

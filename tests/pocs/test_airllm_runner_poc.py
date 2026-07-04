@@ -9,7 +9,12 @@ Per docs/IMPLEMENTATION.md Step 3 — Full Module PoC.
 
 from __future__ import annotations
 
+import pytest
 
+from tests.pocs._cuda import has_cuda
+
+
+@pytest.mark.skipif(not has_cuda(), reason="CUDA not available — PoC requires GPU hardware")
 def test_airllm_runner_module_poc() -> None:
     """Run AirllmRunner with real model and verify metrics output.
 

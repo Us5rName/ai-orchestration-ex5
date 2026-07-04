@@ -12,7 +12,12 @@ Always test against real data.
 
 from __future__ import annotations
 
+import pytest
 
+from tests.pocs._cuda import has_cuda
+
+
+@pytest.mark.skipif(not has_cuda(), reason="CUDA not available — PoC requires GPU hardware")
 def test_collector_lifecycle_produces_valid_record() -> None:
     """MetricsCollector records timing and RAM from a real AirLLM run."""
     from airllm_benchmark.sdk.airllm_generator import generate_text

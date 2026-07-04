@@ -60,7 +60,7 @@ Students and developers with limited GPU memory (or CPU-only machines) cannot ru
 
 ### 2.3 Acceptance Criteria
 
-- [ ] Ollama is installed and a small model runs successfully (smoke test)
+- [ ] A small model runs successfully on GPU via Transformers (smoke test)
 - [ ] A model larger than available memory fails or is excessively slow on raw CPU/GPU (baseline documented)
 - [ ] The same model runs successfully via AirLLM
 - [ ] Metrics (latency, memory, runtime) are collected for all three modes
@@ -286,7 +286,7 @@ Both GPU and CPU baseline modes use a configurable provider selected via `config
 
 | Mode               | Config Key              | Default        |
 | ------------------ | ----------------------- | -------------- |
-| GPU baseline       | `gpu_provider`          | `"ollama"`     |
+| GPU baseline       | `gpu_provider`          | `"transformers"` |
 | CPU baseline       | `cpu_baseline_provider` | `"transformers"` |
 | AirLLM             | (builtin)               | N/A            |
 

@@ -1,10 +1,7 @@
 """Helper functions for BenchmarkSDK.
 
-Delegates provider factory and benchmark orchestration logic so
-sdk.py stays within the 150-line limit.  Each function has a single
-responsibility: create_provider instantiates providers from config,
-and _run_benchmark_impl executes the full model×mode×prompt matrix.
-
+Delegates provider factory, benchmark orchestration, and visualization
+rendering so sdk.py stays within the 150-line limit.
 Per PLAN.md C3 — SDK orchestrates runners, writer, and visualizer.
 """
 
@@ -16,16 +13,21 @@ from airllm_benchmark.providers.transformers_provider import TransformersProvide
 from airllm_benchmark.sdk.runner import RunnerManager
 from airllm_benchmark.sdk.sdk_summary import build_summary
 from airllm_benchmark.services.result_writer import ResultWriter
+from airllm_benchmark.services.visualizer import VisualizationResult
 from airllm_benchmark.shared.config_loader import validate_config
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from airllm_benchmark.providers.base import InferenceProvider
     from airllm_benchmark.services.metrics import MetricsRecord
+    from airllm_benchmark.services.visualizer import Visualizer
     from airllm_benchmark.shared.config_models import ExperimentConfig
 
 __all__ = [
     "build_summary",
     "create_provider",
+    "render_visualization",
     "resolve_model_id",
     "validate_config",
 ]
@@ -122,6 +124,15 @@ def _run_benchmark_impl(
                 records.append(record)
 
     return records
+
+
+def render_visualization(
+    visualizer: Visualizer, records: Sequence[MetricsRecord], output_dir: str
+) -> VisualizationResult:
+    """Generate charts and a comparison table for the given records."""
+    chart_paths = visualizer.generate_all(list(records), output_dir)
+    table_text = visualizer.generate_table(list(records))
+    return VisualizationResult(chart_paths=chart_paths, table_text=table_text)
 
 
 def _resolve_provider(config: ExperimentConfig, mode: str) -> str:

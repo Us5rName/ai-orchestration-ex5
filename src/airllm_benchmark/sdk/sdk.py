@@ -146,9 +146,4 @@ class BenchmarkSDK:
         Returns:
             VisualizationResult with chart_paths and table_text.
         """
-        chart_paths = self._visualizer.generate_all(list(records), output_dir)
-        table_text = self._visualizer.generate_table(list(records))
-        return VisualizationResult(
-            chart_paths=chart_paths,
-            table_text=table_text,
-        )
+        return _helpers.render_visualization(self._visualizer, records, output_dir)

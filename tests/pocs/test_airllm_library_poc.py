@@ -10,6 +10,10 @@ Always test against real data.
 
 from __future__ import annotations
 
+import pytest
+
+from tests.pocs._cuda import has_cuda
+
 
 def test_airllm_importable() -> None:
     """AirLLM package can be imported."""
@@ -42,6 +46,7 @@ def test_auto_model_signature() -> None:
     assert "kwargs" in params, "from_pretrained must accept **kwargs for compression"
 
 
+@pytest.mark.skipif(not has_cuda(), reason="CUDA not available — PoC requires GPU hardware")
 def test_real_model_load_and_generate() -> None:
     """Load a real model via AirLLM and generate text.
 
