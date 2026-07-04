@@ -299,7 +299,60 @@ class Visualizer:
 
 ---
 
-## 7. Visualization Result — `services/visualizer.py`
+## 7. Result Writer — `services/result_writer.py`
+
+Serializes `MetricsRecord` instances to `results/metrics.json`.
+The Runner Manager calls `append(result)` after each run so results
+persist incrementally and survive crashes.
+
+```python
+class ResultWriter:
+    """Persists metrics records to a JSON array file.
+
+    Input:
+        output_path (str): File path for metrics.json output.
+    Output:
+        None (side-effect: writes to file).
+    Setup:
+        output_path with parent directory existing.
+    """
+
+    def __init__(self, output_path: str) -> None:
+        """Initialize writer.
+
+        Args:
+            output_path: Path to JSON file (e.g. "results/metrics.json").
+        """
+
+    def append(self, record: MetricsRecord) -> None:
+        """Append a single metrics record to the JSON array file.
+
+        Loads existing records if the file exists, appends the new
+        record, and writes back. Creates the file if it does not exist.
+
+        Args:
+            record: MetricsRecord to persist.
+        """
+
+    def load(self) -> list[MetricsRecord]:
+        """Load all persisted records from the JSON array file.
+
+        Returns:
+            List of MetricsRecord instances. Empty list if file missing
+            or contains no records.
+        """
+
+    def clear(self) -> None:
+        """Replace the JSON file with an empty array.
+
+        Use before a fresh benchmark run to discard stale data.
+        No-ops if the file does not exist.
+        """
+```
+
+---
+
+## 8. Visualization Result — `services/visualizer.py`
 
 Typed return value for `BenchmarkSDK.generate_visualization()`.
 

@@ -19,8 +19,8 @@
 | **Missing from** | `INTERFACES.md`, `docs/TODO.md` |
 | **Description** | PLAN defines a `ResultWriter` component that serializes `MetricsRecord` → `results/metrics.json`. The Runner Manager calls `append(result)` after each run. This component is never listed as a TODO task, nor does it have an interface definition. |
 | **Impact** | Low — `sdk/sdk.py` can handle JSON persistence inline without a dedicated component. |
-| **Resolution** | Defer to Phase 5 (SDK Layer). Either add as a TODO task or absorb into SDK. |
-| **Status** | 🔲 Deferred |
+| **Resolution** | Implemented `services/result_writer.py` with `append()`, `load()`, `clear()`. Added to `INTERFACES.md` §7. Unit tests: `tests/unit/test_result_writer.py` (11 tests). Real-data PoC: `pocs/result_writer_real_data_poc.py`. |
+| **Status** | ✅ Resolved |
 
 ---
 

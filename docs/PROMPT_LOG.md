@@ -1371,4 +1371,69 @@ Status:         success
 
 ---
 
+## Entry 43 — ResultWriter Module + 150-Line Split
+
+**Prompt:** "Read inconcistencies.md. add the missing result writer according to what you were thaught, implementation.md and your skills. Update the interface and all relevant ones in interfaces.md. When finishing the module, create a PoC that uses the module with real data."
+
+**Context:** `INCONSISTENCIES.md` §1 identified that `ResultWriter` was defined in `PLAN.md` (C3 Component Diagram line 91, Sequence Diagram lines 199-200) but missing from `INTERFACES.md` and `TODO.md`. The component serializes `MetricsRecord` → `results/metrics.json` and is called by the Runner Manager after each run.
+
+**Pre-Implementation Gate:**
+- ✅ PLAN.md C3 defines `ResultWriter` as "Serializes metrics to JSON"
+- ✅ PLAN.md Sequence Diagram shows `RunnerMgr->>Writer: append(result)` → `Writer->>Storage: write JSON`
+- ✅ CONFIG.md §1 defines `MetricsRecord` schema (18 fields)
+- ✅ `MetricsRecord` dataclass exists in `services/metrics_helpers.py`
+- ✅ Gate passed — interface designed from existing architecture docs
+
+**Implementation Approach (per IMPLEMENTATION.md):**
+- Step 1 — Library PoC: `pocs/result_writer_library_poc.py` proved JSON array read/write works
+- Step 2 — Feature PoCs: `pocs/result_writer_feature_poc.py` proved `append`, `load`, `clear` with real `MetricsRecord`
+- Step 3 — Full Module: `services/result_writer.py` (109 lines) with TDD unit tests
+- Real-data PoC: `pocs/result_writer_real_data_poc.py` with 3 realistic `MetricsRecord` instances
+
+**Decisions:**
+- Placed in `services/` layer per PLAN.md C3 component diagram
+- JSON array format per ADR-002 (JSON for Results Storage)
+- `append()` loads existing records, appends, writes back — incremental persistence
+- `load()` returns empty list when file missing — no crash on first run
+- `clear()` replaces file with empty array — for fresh benchmark runs
+
+**Changes:**
+- Created `src/airllm_benchmark/services/result_writer.py` — ResultWriter class (109 lines)
+- Created `tests/unit/test_result_writer.py` — 11 unit tests
+- Created `pocs/result_writer_library_poc.py` — Library PoC (105 lines)
+- Created `pocs/result_writer_feature_poc.py` — Feature PoCs (155 lines, later split to 106)
+- Created `pocs/result_writer_real_data_poc.py` — Real-data PoC (149 lines)
+- Updated `docs/INTERFACES.md` §7 — Added `ResultWriter` interface
+- Updated `src/airllm_benchmark/services/__init__.py` — Added `ResultWriter` export
+- Updated `docs/INCONSISTENCIES.md` §1 — Marked ✅ Resolved
+- Updated `docs/PROMPT_LOG.md` — This entry
+
+**Validation:**
+- Unit tests: 11/11 passed
+- Library PoC: PASSED
+- Feature PoCs: PASSED
+- Real-data PoC: PASSED (schema matches CONFIG.md §1)
+- `uv run ruff check` → 0 violations
+- All files ≤ 150 lines
+
+---
+
+## Entry 44 — 150-Line Split: result_writer_feature_poc.py
+
+**Prompt:** "Split files that are too big according to what you were thaught and your skills about splitting. Then Add to prompt log and commit"
+
+**Context:** `pocs/result_writer_feature_poc.py` was 155 lines, exceeding the 150-line limit from `CLAUDE.md` §4. Per modular-design skill, files must stay under 150 lines.
+
+**Approach:** Removed redundant section comments and docstring verbosity. The PoC is disposable per IMPLEMENTATION.md ("PoC files themselves are disposable and can be removed after the module is complete"), so trimming rather than extracting was the pragmatic choice.
+
+**Changes:**
+- Trimmed `pocs/result_writer_feature_poc.py` from 155 → 106 lines
+
+**Validation:**
+- `uv run ruff check` → 0 violations
+- Feature PoC: PASSED (all 5 assertions)
+- File now 106 lines (≤ 150)
+
+---
+
 ## Summary of Documents
