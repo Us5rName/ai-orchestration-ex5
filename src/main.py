@@ -47,6 +47,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Input prompt text.",
     )
     parser.add_argument(
+        "--quantization",
+        default="none",
+        choices=["none", "4bit", "8bit"],
+        help='Quantization level (default: "none").',
+    )
+    parser.add_argument(
         "--config-dir",
         type=Path,
         default=None,
@@ -66,6 +72,7 @@ def run_single(args: argparse.Namespace) -> None:
         model_id=args.model,
         mode=args.mode,
         prompt=args.prompt,
+        quantization=args.quantization,
     )
 
     _print_result(record)
