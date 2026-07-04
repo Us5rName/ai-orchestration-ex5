@@ -9,7 +9,11 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from airllm_benchmark.cli_printers import print_result, print_run_all_result
+from airllm_benchmark.cli_printers import (
+    print_result,
+    print_run_all_result,
+    print_validation_result,
+)
 from airllm_benchmark.sdk.sdk import BenchmarkSDK
 
 
@@ -34,6 +38,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--run-all",
         action="store_true",
         help="Run full benchmark across all models, modes, and prompts.",
+    )
+    parser.add_argument(
+        "--validate",
+        action="store_true",
+        help="Validate config, providers, and model cache; run no inference.",
     )
     parser.add_argument(
         "--model",
@@ -93,6 +102,20 @@ def run_all(args: argparse.Namespace) -> None:
     print_run_all_result(result)
 
 
+def run_validate(args: argparse.Namespace) -> None:
+    """Run pre-benchmark validation via SDK and print the result.
+
+    Per docs/TODO.md task 7.4 — checks config, providers, and model
+    cache without executing any inference.
+
+    Args:
+        args: Parsed CLI arguments (only config_dir is used).
+    """
+    sdk = BenchmarkSDK(config_dir=args.config_dir)
+    result = sdk.validate()
+    print_validation_result(result)
+
+
 def main(argv: list[str] | None = None) -> None:
     """Entry point: parse args and dispatch to SDK."""
     args = parse_args(argv)
@@ -103,6 +126,10 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.run_all:
         run_all(args)
+        return
+
+    if args.validate:
+        run_validate(args)
         return
 
     # Default: show help when no flag provided

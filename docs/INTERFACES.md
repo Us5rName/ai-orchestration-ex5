@@ -2,9 +2,9 @@
 
 | Metadata      | Value                                  |
 | ------------- | -------------------------------------- |
-| **Version**   | 1.03                                   |
+| **Version**   | 1.04                                   |
 | **Based on**  | `docs/PRD.md` v1.00, `docs/PLAN.md` v1.00 |
-| **Changes**   | Added `quantization` param to §1 SDK, §3 Runner; updated §2 Provider |
+| **Changes**   | Added `BenchmarkSDK.validate()` + `ValidationResult` (§1, §10) per task 7.4 |
 
 ---
 
@@ -52,6 +52,17 @@ class BenchmarkSDK:
 
         Returns:
             VisualizationResult with chart_paths and table_text.
+        """
+
+    def validate(self) -> ValidationResult:
+        """Validate config, providers, and model cache. Runs no inference.
+
+        Per docs/TODO.md task 7.4 — catches misconfiguration (bad config,
+        an unconstructible provider) before an expensive benchmark run.
+        Model-cache presence is reported but is informational only.
+
+        Returns:
+            ValidationResult — see §10.
         """
 ```
 
@@ -392,4 +403,41 @@ def call_with_rate_limit[T](service: str, fn: Callable[[], T]) -> T:
     Raises:
         Exception: Whatever fn() raises — errors are never swallowed.
     """
+```
+
+---
+
+## 10. Validation Result — `sdk/sdk_validation.py`
+
+Typed return value for `BenchmarkSDK.validate()`. Per docs/TODO.md task 7.4.
+
+```python
+@dataclass(frozen=True)
+class ValidationResult:
+    """Outcome of a pre-benchmark validation dry-run. No inference is run."""
+
+    config_ok: bool
+    config_error: str
+    providers: dict[str, bool]
+    provider_errors: dict[str, str]
+    models_cached: dict[str, bool]
+
+    @property
+    def passed(self) -> bool:
+        """True if config is valid and every configured provider constructed
+        cleanly. Model-cache status is informational only — it does not
+        affect this property, since network access can fill the cache.
+        """
+```
+
+### CLI — `src/main.py`
+
+`--validate` calls `BenchmarkSDK.validate()` and prints the result; it never
+runs inference. Exists alongside `--single` and `--run-all`:
+
+| Flag | Delegates to |
+| --- | --- |
+| `--single` | `BenchmarkSDK.run_single()` |
+| `--run-all` | `BenchmarkSDK.run_benchmark()` |
+| `--validate` | `BenchmarkSDK.validate()` |
 ```

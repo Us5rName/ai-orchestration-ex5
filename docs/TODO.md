@@ -184,12 +184,12 @@ When an integration checkpoint fails:
 
 | #  | Task | Depends | Status | Definition of Done |
 |----|------|---------|--------|-------------------|
-| 7.1 | Handle gated model access — accept HuggingFace terms for Llama models | 1.3 | Not Started | Model accessible via HF API; token in `.env` |
-| ⚠️ | | | | **Caution:** Gated models (Llama) require manual term acceptance on HuggingFace before any API access works. |
-| 7.2 | Pre-download all models to HF cache | 7.1 | Not Started | All three model tiers cached locally; no network needed during benchmarks |
-| ⚠️ | | | | **Caution:** 72B model download is large (~140 GB unquantized). Verify disk space before starting. |
+| 7.1 | Handle gated model access — accept HuggingFace terms for Llama models | 1.3 | ✅ N/A — resolved, no action needed | **Moot.** `docs/PRD.md` §7.1's model-selection table names `meta-llama/Llama-3.2-1B` as the illustrative "small" tier example, but the *actual* configured models in `config/experiment.json` are all open, ungated Qwen checkpoints (`Qwen/Qwen2.5-0.5B-Instruct`, `Qwen/Qwen2.5-3B-Instruct`, `Qwen/Qwen2.5-7B-Instruct`) — confirmed by inspection 2026-07-04. None require HF gated-access term acceptance. A separate PR's CI run independently hit a 401 from `meta-llama/Llama-3.2-1B` with no `HF_TOKEN` configured, which is what prompted this check — but that model is not referenced anywhere the benchmark actually runs. No programmatic term-acceptance was attempted (that requires a human to click "Agree" on huggingface.co); none was needed. If a gated model is reintroduced later, the user must visit its HF page, accept terms, and set `HF_TOKEN` in `.env` before this task can be closed the "real" way. |
+| ⚠️ | | | | **Caution:** Gated models (Llama) require manual term acceptance on HuggingFace before any API access works. Not applicable to the current config. |
+| 7.2 | Pre-download all models to HF cache | 7.1 | ✅ Done (small, medium, large all cached) | All three configured tiers loaded end-to-end (`load_model` → `generate` → `unload`) through `TransformersProvider` on 2026-07-04: `Qwen/Qwen2.5-0.5B-Instruct` (small, ~2.27 GB, ~3.4s), `Qwen/Qwen2.5-3B-Instruct` (medium, ~6.18 GB, ~61s incl. download), `Qwen/Qwen2.5-7B-Instruct` (large, ~15.24 GB, ~143s incl. download). Verified present via `huggingface_hub.scan_cache_dir()` (26.17 GB total cache). Network access confirmed working in this sandbox (no CUDA available here — driver too old for the installed torch build — so loads used `device="cpu"`; that's sufficient for caching weights, which is this task's goal). No 72B model in scope — current config caps at 7B (see 7.1 note), so the "~140 GB / verify disk space" caution below does not apply as originally written. |
+| ⚠️ | | | | **Caution:** Original caution assumed a 72B model; current config's largest tier is 7B (~15 GB). Disk was not a constraint (1.6 TB free). |
 | 7.3 | Fill in `config/hardware.json` with actual machine specs | 2.2 | ✅ Done | All fields populated; no empty values |
-| 7.4 | POC: config + provider validation | 2.3, 3.3, 3.4, 7.2, 7.3 | Not Started | SDK validates config is consistent, provider is reachable, models are cached — no inference executed |
+| 7.4 | POC: config + provider validation | 2.3, 3.3, 3.4, 7.2, 7.3 | ✅ Done | Reused existing `validate_config()`/`validate_hardware()` in `shared/config_loader.py` rather than duplicating. Added `BenchmarkSDK.validate()` (`sdk/sdk_validation.py`, `ValidationResult`) which: (1) loads + validates `experiment.json`/`hardware.json`, never raising — failures are captured in `ValidationResult.config_error`; (2) instantiates each configured provider (`gpu_provider`, `cpu_baseline_provider`) via the existing `create_provider()` factory with **no** `load_model()`/`generate()` call, so no inference runs; (3) reports HF-cache presence per model via new `shared/cache_check.py::model_cache_status()` (`huggingface_hub.scan_cache_dir()`) — informational only, does not fail validation. Wired into CLI as `uv run python main.py --validate` (see `docs/INTERFACES.md` §10). Unit tests in `tests/unit/test_sdk_validation.py`, `tests/unit/test_cache_check.py`, `tests/unit/test_cli_validate.py` — all external calls mocked, no real downloads. Manually verified against the real cached models: reports PASSED with all three tiers cached. |
 | ⚠️ | | | | **Caution:** This step catches misconfiguration before expensive benchmark runs. Do not skip. |
 
 ---
@@ -233,7 +233,7 @@ When an integration checkpoint fails:
 | 4 — Services | 5 | 5/5 Done |
 | 5 — SDK (Runners) | 8 | 8/8 Done |
 | 6 — CLI | 2 | 2/2 Done |
-| 7 — Pre-Benchmark | 4 | 1/4 Done |
+| 7 — Pre-Benchmark | 4 | 4/4 Done (7.1 resolved as N/A — see task note) |
 | 8 — Benchmark Execution | 6 | 0/6 Done |
 | 9 — Analysis & Documentation | 7 | 5/7 Done |
-| **Total** | **50** | **39/50 Done** |
+| **Total** | **50** | **42/50 Done** |
