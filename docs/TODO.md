@@ -73,7 +73,7 @@
 | 5.1 | Implement `sdk/runner.py` — `InferenceRunner` protocol + runner manager per [`INTERFACES.md`](INTERFACES.md) §3 | 3.2, 2.3 | ✅ Done | Protocol defined; manager selects runner by mode; 9 tests pass |
 | 5.2 | Implement `sdk/gpu_runner.py` — delegates to configured GPU provider | 5.1, 4.1 | ✅ Done | Delegates to provider; catches OOM; returns MetricsRecord; 11 tests pass |
 | ⚠️ | | | | **Caution:** GPU runner depends on provider availability. OOM can occur if model exceeds VRAM. Mock provider in tests. |
-| 5.3 | Implement `sdk/cpu_runner.py` — delegates to configured CPU provider (no paging) | 5.1, 4.1 | Not Started | Loads provider from config; catches OOM; returns metrics dict |
+| 5.3 | Implement `sdk/cpu_runner.py` — delegates to configured CPU provider (no paging) | 5.1, 4.1 | ✅ Done | Loads provider from config; catches OOM (MemoryError); returns MetricsRecord; 12 tests pass |
 | ⚠️ | | | | **Caution:** CPU runner may OOM or hang on large models. Set timeout. Mock provider in tests. |
 | 5.4 | Implement `sdk/airllm_runner.py` — model loading + quantization | 4.1 | Not Started | Loads model via `airllm.AutoModel`; supports 4bit/8bit quantization |
 | ⚠️ | | | | **Caution:** AirLLM uses paged inference with on-demand weight loading. Split across helper functions to stay under 150 lines. Mock AirLLM in tests. |
