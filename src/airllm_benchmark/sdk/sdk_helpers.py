@@ -47,12 +47,15 @@ def resolve_model_id(config: ExperimentConfig, model_name: str) -> str:
     return config.get_model_id(model_name)
 
 
-def create_provider(name: str, provider_config: dict) -> InferenceProvider:
+def create_provider(
+    name: str, provider_config: dict, quantization: str = "none"
+) -> InferenceProvider:
     """Instantiate an InferenceProvider by name.
 
     Args:
         name: Provider identifier (e.g. ``"transformers"``).
         provider_config: Per-provider configuration from experiment.json.
+        quantization: Quantization level (``"4bit"``, ``"8bit"``, ``"none"``).
 
     Returns:
         Configured InferenceProvider instance.
@@ -64,7 +67,7 @@ def create_provider(name: str, provider_config: dict) -> InferenceProvider:
 
     if name == "transformers":
         device = cfg.get("device", "cpu")
-        return TransformersProvider(device=device)
+        return TransformersProvider(device=device, quantization=quantization)
 
     msg = f"Unsupported provider: '{name}'. Available: transformers"
     raise ValueError(msg)
@@ -98,7 +101,9 @@ def _run_benchmark_impl(
                     )
                 else:
                     provider_name = _resolve_provider(config, mode)
-                    provider = create_provider(provider_name, config.provider_config)
+                    provider = create_provider(
+                        provider_name, config.provider_config, config.quantization
+                    )
                     runner = runner_mgr.get_runner(mode)
                     record = runner.run(
                         provider=provider,

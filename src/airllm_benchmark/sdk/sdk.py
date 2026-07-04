@@ -115,7 +115,7 @@ class BenchmarkSDK:
             )
 
         provider_name = provider or _helpers._resolve_provider(config, mode)
-        prov = _helpers.create_provider(provider_name, config.provider_config)
+        prov = _helpers.create_provider(provider_name, config.provider_config, quantization)
         runner = self._runner_mgr.get_runner(mode)
 
         return runner.run(
