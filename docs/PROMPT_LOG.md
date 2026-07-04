@@ -1212,4 +1212,68 @@ Status:         success
 
 ---
 
+## Entry 40 — Task 5.4: AirLLM Runner (AirllmRunner)
+
+**Prompt:** "start 5.4. Use Implementation.md and what you were thaught and your skills and check gate. When finishing the module, create a PoC that uses the module. There is testing-airllm.py at the root of the repo to help you with the PoCs"
+
+**Context:** Task 5.4 requires implementing `sdk/airllm_runner.py` with `AirllmRunner` that loads models via `airllm.AutoModel`, supports 4bit/8bit quantization, and uses AirLLM's paged inference (on-demand weight loading). Unlike GPU/CPU runners, AirLLM is builtin — no external provider. Follows testing-airllm.py pattern exactly.
+
+**Pre-Implementation Gate:**
+- ✅ INTERFACES.md §3 defines `InferenceRunner` protocol (`run(provider, model_id, prompt, max_tokens, quantization) -> MetricsRecord`)
+- ✅ Dependencies satisfied: 4.1 (metrics.py ✅)
+- ✅ AirLLM runner documented as "builtin, no provider" — clear design intent
+- ✅ `RunnerManager` already imports `AirllmRunner` from expected path
+- ✅ Gate passed — no gaps or ambiguities
+
+**Step 1 — Library PoC (real data):**
+- `tests/pocs/test_airllm_library_poc.py` — 4 tests: import, AutoModel accessible, signature check, real model load + generation
+- Real-data test: `Qwen/Qwen2.5-0.5B-Instruct` with 4bit compression, `max_new_tokens=4`
+- Follows `testing-airllm.py` pattern exactly (tokenizer settings, CUDA, use_cache)
+- Discovered: `compression` parameter goes via `**kwargs`, not explicit signature
+- Result: 4/4 passed (15.9s, model cached)
+
+**Step 3 — Full Module (TDD: RED → GREEN):**
+- **RED:** Wrote unit tests → failed with `ModuleNotFoundError`
+- **GREEN:** Implemented module → 11/11 tests passed
+- Split into 3 files per 150-line rule:
+  - `airllm_loader.py` (70 lines) — model loading + quantization mapping
+  - `airllm_generator.py` (66 lines) — tokenization + generation + token counting
+  - `airllm_runner.py` (108 lines) — main runner with metrics + error handling
+
+**PoC Results (real data via module — 0.5B model, 4bit):**
+- Library PoC: 4/4 passed (15.9s)
+- Module PoC: 1/1 passed (17.7s) — full `AirllmRunner.run()` pipeline
+- Verified: status=success, tokens_generated>0, mode=airllm, provider=airllm, timing>0, RAM>0
+
+**Decisions:**
+- `AirllmRunner` is builtin — no external provider; `provider` parameter accepted as `None` for protocol compliance
+- AirLLM uses paged inference: weights loaded on-demand from disk, enabling models larger than RAM
+- Quantization maps `"4bit"`/`"8bit"`/`"none"` to AirLLM compression strings
+- Error handling: `MemoryError` → `"oom"` status, all other exceptions → `"error"`
+- Generation follows `testing-airllm.py` exactly: tokenizer settings, CUDA, `use_cache=True`
+- Token counting: `output_len - input_len` from generation output sequences
+
+**Changes:**
+- Created `src/airllm_benchmark/sdk/airllm_loader.py` — model loading + quantization (70 lines)
+- Created `src/airllm_benchmark/sdk/airllm_generator.py` — tokenization + generation (66 lines)
+- Created `src/airllm_benchmark/sdk/airllm_runner.py` — main runner + error handling (108 lines)
+- Updated `src/airllm_benchmark/sdk/__init__.py` — export `AirllmRunner`
+- Created `tests/pocs/test_airllm_library_poc.py` — Library PoC with real data (4 tests)
+- Created `tests/pocs/test_airllm_runner_poc.py` — Module PoC with real data (1 test)
+- Created `tests/unit/test_airllm_runner.py` — Protocol compliance (2 tests)
+- Created `tests/unit/test_airllm_runner_delegation.py` — Delegation + lifecycle (6 tests)
+- Created `tests/unit/test_airllm_runner_errors.py` — Error handling (3 tests)
+- Updated `docs/TODO.md` — marked 5.4 as Done
+- Updated `docs/PROMPT_LOG.md` — this entry
+
+**Validation:**
+- Library PoC (real data): 4/4 passed (15.9s)
+- Module PoC (real data): 1/1 passed (17.7s)
+- Unit tests (mocked): 11/11 passed
+- `uv run pytest tests/unit/ -v` → **154 passed**, 0 failed (no regressions)
+- `uv run ruff check` → 0 violations
+- All files ≤ 150 lines
+
+---
+
 ## Summary of Documents
