@@ -1677,4 +1677,27 @@ Status:         success
 
 ---
 
+## Entry 54 — Visualizer Timestamped Subdirectory
+
+**Prompt:** "Does Visualizer write to the same file every time?" → "I want the visualizer to work like the result writers. Use a subdirectory in the sdk"
+
+**Context:** The Visualizer always wrote to fixed filenames (`assets/latency_chart.png`, `assets/memory_chart.png`), overwriting previous runs. ResultWriter uses a timestamped path (`results/metrics_{timestamp}.json`) managed by the SDK. User wants the Visualizer to follow the same pattern — SDK-managed timestamped subdirectory so each run preserves its own artifacts.
+
+**Approach:** Minimal surgical change in `sdk.py` — share the `now` timestamp between ResultWriter and Visualizer output paths. The Visualizer service itself is unchanged (still takes `output_dir` parameter, still writes fixed filenames inside it). The SDK now creates `assets/run_{timestamp}/` and passes it, matching the ResultWriter pattern where the SDK owns the output path.
+
+**Changes:**
+- `src/airllm_benchmark/sdk/sdk.py` — `run_benchmark()` creates shared `now` timestamp. ResultWriter uses `results/metrics_{now}.json`, Visualizer uses `assets/run_{now}/`. Same timestamp ensures results and charts are correlated.
+- `tests/unit/test_sdk_run_benchmark.py` — Updated `test_visualizer_called_with_records` to verify `generate_all()` receives timestamped `output_dir` argument.
+
+**Before:** Every run overwrote `assets/latency_chart.png` and `assets/memory_chart.png`.
+
+**After:** Each run writes to its own subdirectory, e.g. `assets/run_20260705_143022/latency_chart.png`.
+
+**Validation:**
+- `uv run pytest tests/unit/test_sdk_run_benchmark.py tests/unit/test_visualizer_*.py tests/unit/test_sdk_visualization.py -v` → 24 passed, 0 failures.
+- `uv run ruff check src/ tests/` → 0 violations.
+- All files ≤ 150 lines.
+
+---
+
 ## Summary of Documents
