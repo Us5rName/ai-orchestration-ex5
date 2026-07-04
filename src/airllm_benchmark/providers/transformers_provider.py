@@ -10,18 +10,13 @@ import gc
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-)
-
 from . import transformers_helpers as _helpers
 from .base import InferenceProvider
 
 _clear_cuda_cache = _helpers.clear_cuda_cache
 
 if TYPE_CHECKING:
-    from transformers import PreTrainedModel
+    from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 
 class TransformersProvider(InferenceProvider):
@@ -47,7 +42,7 @@ class TransformersProvider(InferenceProvider):
         self._device = device
         self._quantization = quantization
         self._model: PreTrainedModel | None = None
-        self._tokenizer: AutoTokenizer | None = None
+        self._tokenizer: PreTrainedTokenizerBase | None = None
         self._model_id: str | None = None
         self._on_download_complete = on_download_complete
 
@@ -78,21 +73,22 @@ class TransformersProvider(InferenceProvider):
         # Sync instance device so generate() uses the same target.
         self._device = target
         self._model_id = model_id
-        self._tokenizer = AutoTokenizer.from_pretrained(model_id)
+
+        # Build quantization config when 4bit/8bit is requested.
+        quant_config = _helpers.build_quant_config(self._quantization)
+        model_kwargs = {}
+        if quant_config is not None:
+            model_kwargs["quantization_config"] = quant_config
+
+        tokenizer, model = _helpers.load_tokenizer_and_model(model_id, model_kwargs)
+        self._tokenizer = tokenizer
 
         # Signal download complete after tokenizer + model weights downloaded
         # but before .to(device) transfers to GPU.
         if self._on_download_complete is not None:
             self._on_download_complete()
 
-        # Build quantization config when 4bit/8bit is requested.
-        quant_config = _helpers.build_quant_config(self._quantization)
-
-        model_kwargs = {}
-        if quant_config is not None:
-            model_kwargs["quantization_config"] = quant_config
-
-        self._model = AutoModelForCausalLM.from_pretrained(model_id, **model_kwargs).to(target)
+        self._model = model.to(target)
 
     # ——— InferenceProvider: generate ———
 

@@ -367,3 +367,29 @@ class VisualizationResult:
     chart_paths: list[str]
     table_text: str
 ```
+
+---
+
+## 9. API Gatekeeper — `shared/gatekeeper.py`
+
+Rate-limits external calls (HuggingFace Hub downloads) per CLAUDE.md §3.
+Every provider/loader that calls an external service wraps the call here
+instead of calling it directly. Config comes from `config/rate_limits.json`
+(CONFIG.md §5). Overflow calls block until their slot is free — this never
+raises due to rate limiting.
+
+```python
+def call_with_rate_limit[T](service: str, fn: Callable[[], T]) -> T:
+    """Execute fn() through the named service's rate limiter.
+
+    Args:
+        service: Rate-limit bucket name (key in config/rate_limits.json).
+        fn: Zero-argument callable to execute once the slot is free.
+
+    Returns:
+        Whatever fn() returns.
+
+    Raises:
+        Exception: Whatever fn() raises — errors are never swallowed.
+    """
+```

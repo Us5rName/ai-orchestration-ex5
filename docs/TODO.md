@@ -49,6 +49,8 @@
 | 3.5 | Implement `providers/llamacpp_provider.py` — llama.cpp Python bindings | 3.2 | Not Started | Implements `InferenceProvider` |
 | ⚠️ | | | | **Caution:** Each provider wraps a different runtime (HTTP, PyTorch, native bindings). Test isolation is critical — mock all external calls. |
 | 3.6 | `tests/unit/test_providers.py` — provider interface tests | 3.3, 3.4, 3.5 | ✅ Done | Tests protocol compliance; all external calls mocked (split into `test_providers.py` + `test_provider_lifecycle.py`) |
+| 3.7 | Implement `shared/gatekeeper.py` + `config/rate_limits.json` — rate-limited external calls per `CLAUDE.md` §3 | 2.3 | ✅ Done | `call_with_rate_limit()` wraps HF Hub calls in `transformers_helpers.py` and `airllm_loader.py`; never raises on overflow |
+| 3.8 | `tests/unit/test_gatekeeper.py` — gatekeeper tests | 3.7 | ✅ Done | Tests RateLimiter timing (mocked clock), config loading, exception propagation; 9 tests pass |
 
 ---
 
@@ -186,7 +188,7 @@ When an integration checkpoint fails:
 | ⚠️ | | | | **Caution:** Gated models (Llama) require manual term acceptance on HuggingFace before any API access works. |
 | 7.2 | Pre-download all models to HF cache | 7.1 | Not Started | All three model tiers cached locally; no network needed during benchmarks |
 | ⚠️ | | | | **Caution:** 72B model download is large (~140 GB unquantized). Verify disk space before starting. |
-| 7.3 | Fill in `config/hardware.json` with actual machine specs | 2.2 | Not Started | All fields populated; no empty values |
+| 7.3 | Fill in `config/hardware.json` with actual machine specs | 2.2 | ✅ Done | All fields populated; no empty values |
 | 7.4 | POC: config + provider validation | 2.3, 3.3, 3.4, 7.2, 7.3 | Not Started | SDK validates config is consistent, provider is reachable, models are cached — no inference executed |
 | ⚠️ | | | | **Caution:** This step catches misconfiguration before expensive benchmark runs. Do not skip. |
 
@@ -212,10 +214,10 @@ When an integration checkpoint fails:
 | #  | Task | Depends | Status | Definition of Done |
 |----|------|---------|--------|-------------------|
 | 9.1 | Create `notebooks/analysis.ipynb` — Jupyter notebook with results analysis | 8.6 | Not Started | Loads `metrics.json`; generates charts; includes LaTeX formulas; academic references |
-| 9.2 | Verify global test coverage ≥ 85% | 2.4, 3.6, 4.2, 4.5, 5.8 | Not Started | `uv run pytest --cov` passes; coverage report generated |
-| 9.3 | Run `ruff check` — zero violations | 6.2 | Not Started | `uv run ruff check` returns 0 |
-| 9.4 | Verify no file exceeds 150 lines | 6.2 | Not Started | All `.py` files ≤ 150 lines |
-| 9.5 | Update `README.md` — installation, usage, configuration, examples | 8.6 | Not Started | Complete per project-setup skill requirements |
+| 9.2 | Verify global test coverage ≥ 85% | 2.4, 3.6, 4.2, 4.5, 5.8 | ✅ Done | `uv run pytest --cov` passes (89.6%); coverage report generated; gated in CI |
+| 9.3 | Run `ruff check` — zero violations | 6.2 | ✅ Done | `uv run ruff check` returns 0 (`src tests scripts`); gated in CI |
+| 9.4 | Verify no file exceeds 150 lines | 6.2 | ✅ Done | All `.py` files ≤ 150 lines; gated in CI via `scripts/check_line_cap.py` |
+| 9.5 | Update `README.md` — installation, usage, configuration, examples | 8.6 | ✅ Done | Adopted hw5-bundle starter README with generated repo-facts region |
 | 9.6 | `tests/integration/test_pipeline.py` — full pipeline smoke test | 5.7 | Not Started | Runs small model via configured provider; validates metrics output |
 | 9.7 | Run final checklist per [`final-checklist`](.agents/skills/final-checklist/SKILL.md) | 9.2, 9.3, 9.4, 9.5 | Not Started | All checklist items pass |
 
@@ -225,13 +227,13 @@ When an integration checkpoint fails:
 
 | Phase | Tasks | Status |
 |-------|-------|--------|
-| 1 — Scaffolding | 4 | 0/4 Done |
-| 2 — Configuration | 5 | 0/5 Done |
-| 3 — Providers | 7 | 0/7 Done |
-| 4 — Services | 5 | 1/5 Done |
-| 5 — SDK (Runners) | 9 | 5/9 Done |
-| 6 — CLI | 2 | 0/2 Done |
-| 7 — Pre-Benchmark | 4 | 0/4 Done |
+| 1 — Scaffolding | 4 | 4/4 Done |
+| 2 — Configuration | 5 | 5/5 Done |
+| 3 — Providers | 9 | 8/9 Done (3.5 llama.cpp not started; 3.3 ollama removed, excluded from count) |
+| 4 — Services | 5 | 5/5 Done |
+| 5 — SDK (Runners) | 8 | 8/8 Done |
+| 6 — CLI | 2 | 2/2 Done |
+| 7 — Pre-Benchmark | 4 | 1/4 Done |
 | 8 — Benchmark Execution | 6 | 0/6 Done |
-| 9 — Analysis & Documentation | 7 | 0/7 Done |
-| **Total** | **49** | **0/49 Done** |
+| 9 — Analysis & Documentation | 7 | 4/7 Done |
+| **Total** | **50** | **37/50 Done** |

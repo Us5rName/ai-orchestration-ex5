@@ -2,7 +2,7 @@
 
 | Metadata      | Value                                  |
 | ------------- | -------------------------------------- |
-| **Version**   | 1.03                                   |
+| **Version**   | 1.04                                   |
 | **Created**   | 2026-07-04                             |
 | **Purpose**   | Track gaps between docs, interfaces, and TODO |
 
@@ -20,7 +20,7 @@
 | **Description** | Per PROMPT_LOG.md Entry 22, the GPU provider was changed from ollama to transformers. `config/experiment.json` was updated (`gpu_provider: "transformers"`), `ollama_provider.py` was removed, and TODO.md was updated. However, multiple documentation files still reference ollama as if it were an active provider: package layout diagrams, config examples, provider implementation tables, component diagrams, code structure diagrams, ADRs, deployment diagrams, and implementation examples. |
 | **Impact** | Medium — documentation is misleading; new contributors may assume ollama is still supported. |
 | **Resolution** | Update all affected documents to remove ollama references or mark ollama as "removed". Documents to update: `CLAUDE.md` (§3 package layout, §3 API Gatekeeper, §5 QA), `docs/CONFIG.md` (§2 example config and field descriptions), `docs/INTERFACES.md` (§2 provider implementations table), `docs/PLAN.md` (§1.3 C3, §1.4 C4, §5 ADR-003, §6 deployment), `docs/IMPLEMENTATION.md` (Example section, Mandatory Standards). |
-| **Status** | 🔲 Deferred
+| **Status** | 🔲 Deferred — note: a related but separate instance (`docs/PRD.md` §2.3 acceptance criteria and §7.3 `gpu_provider` default, not in the file list above) was fixed in this pass; the files listed here are still untouched. |
 
 ---
 
@@ -32,7 +32,7 @@
 | **Description** | Summary table shows all phases as `0/X Done` while individual task tables show many tasks marked ✅ Done (Phases 1-2 complete, Phase 3 mostly done, Phase 4 partially done). |
 | **Impact** | Low — cosmetic; the individual task tables are authoritative. |
 | **Resolution** | Update Summary table to reflect actual progress. |
-| **Status** | 🔲 Deferred |
+| **Status** | ✅ Resolved — Summary table now reflects actual per-phase progress (37/50 done). |
 
 ---
 

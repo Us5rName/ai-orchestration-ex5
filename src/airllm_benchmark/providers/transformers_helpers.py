@@ -10,7 +10,14 @@ inference service.
 
 from __future__ import annotations
 
-from transformers import BitsAndBytesConfig
+from typing import TYPE_CHECKING
+
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+
+from airllm_benchmark.shared.gatekeeper import call_with_rate_limit
+
+if TYPE_CHECKING:
+    from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 
 def build_quant_config(quantization: str) -> BitsAndBytesConfig | None:
@@ -32,6 +39,27 @@ def build_quant_config(quantization: str) -> BitsAndBytesConfig | None:
     if quantization == "8bit":
         return BitsAndBytesConfig(load_in_8bit=True)
     return None
+
+
+def load_tokenizer_and_model(
+    model_id: str, model_kwargs: dict
+) -> tuple[PreTrainedTokenizerBase, PreTrainedModel]:
+    """Load tokenizer + model from HF Hub through the API Gatekeeper.
+
+    Args:
+        model_id: HuggingFace model identifier or local path.
+        model_kwargs: Extra kwargs for ``AutoModelForCausalLM.from_pretrained``.
+
+    Returns:
+        Tuple of (tokenizer, model), neither yet moved to a device.
+    """
+    tokenizer = call_with_rate_limit(
+        "huggingface", lambda: AutoTokenizer.from_pretrained(model_id)
+    )
+    model = call_with_rate_limit(
+        "huggingface", lambda: AutoModelForCausalLM.from_pretrained(model_id, **model_kwargs)
+    )
+    return tokenizer, model
 
 
 def clear_cuda_cache() -> None:

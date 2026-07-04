@@ -12,7 +12,12 @@ Always test against real data.
 
 from __future__ import annotations
 
+import pytest
 
+from tests.pocs._cuda import has_cuda
+
+
+@pytest.mark.skipif(not has_cuda(), reason="CUDA not available — PoC requires GPU hardware")
 def test_generate_text_returns_valid_output() -> None:
     """generate_text() produces non-empty text and correct token count."""
     from airllm_benchmark.sdk.airllm_generator import generate_text
@@ -37,6 +42,7 @@ def test_generate_text_returns_valid_output() -> None:
     print("==========================\n")
 
 
+@pytest.mark.skipif(not has_cuda(), reason="CUDA not available — PoC requires GPU hardware")
 def test_generate_text_with_no_quantization() -> None:
     """generate_text() works with uncompressed model (none quantization)."""
     from airllm_benchmark.sdk.airllm_generator import generate_text

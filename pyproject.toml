@@ -24,6 +24,10 @@ test = [
 lint = [
     "ruff>=0.1.0",
 ]
+dev = [
+    "pyyaml>=6.0",
+    "pre-commit>=3.5",
+]
 
 [tool.ruff]
 target-version = "py312"

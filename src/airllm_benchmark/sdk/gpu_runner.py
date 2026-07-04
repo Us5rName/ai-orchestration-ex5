@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from airllm_benchmark.providers.base import InferenceProvider
 
 GPU_MODE = "gpu_provider"
-DEFAULT_DEVICE = "cuda"
 
 
 class GpuRunner:
@@ -76,7 +75,10 @@ class GpuRunner:
                 # Cast to Any to satisfy static type checker.
                 cast(Any, provider)._on_download_complete = collector.mark_download_complete
 
-            provider.load_model(model_id, DEFAULT_DEVICE)
+            # Pass None (not a hardcoded device) so providers that accept it,
+            # e.g. TransformersProvider, fall back to their own constructed
+            # device instead of always being forced onto GPU.
+            provider.load_model(model_id, None)
             collector.mark_load_complete()
 
             collector.mark_generation_start()

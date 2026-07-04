@@ -13,7 +13,7 @@ from airllm_benchmark.providers.transformers_provider import TransformersProvide
 from airllm_benchmark.sdk.cpu_runner import CpuRunner
 
 # Small model that runs quickly on CPU for benchmarking.
-POC_MODEL = "meta-llama/Llama-3.2-1B"
+POC_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
 POC_PROMPT = "What is 2+2?"
 POC_MAX_TOKENS = 3
 

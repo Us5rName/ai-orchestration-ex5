@@ -110,3 +110,24 @@ Each inference run produces one record appended to the JSON array.
 | `HF_TOKEN`   | HuggingFace API token          | Yes*     |
 
 > *Required only for gated models (e.g., Llama). Open models (Qwen) do not need a token.
+
+---
+
+## 5. Rate Limits — `config/rate_limits.json`
+
+Read by the API Gatekeeper (`shared/gatekeeper.py`, see `INTERFACES.md` §9) to
+pace external calls. A missing file or missing service key disables limiting
+for that service — the gatekeeper never crashes due to a config gap.
+
+```json
+{
+  "huggingface": { "calls_per_minute": 30 }
+}
+```
+
+### Fields
+
+| Field                        | Type   | Description                                  |
+| ---------------------------- | ------ | --------------------------------------------- |
+| `<service>`                  | object | Rate-limit bucket, keyed by service name       |
+| `<service>.calls_per_minute` | int    | Max calls/minute; `<= 0` or absent disables limiting |
