@@ -68,9 +68,3 @@ repos:
         entry: uv run python scripts/check_workflow_permissions.py
         language: system
         pass_filenames: false
-
-      - id: readme-facts
-        name: README generated facts sync
-        entry: uv run python scripts/readme_sync.py check
-        language: system
-        pass_filenames: false

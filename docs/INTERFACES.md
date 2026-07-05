@@ -70,7 +70,7 @@ class BenchmarkSDK:
 
 ## 2. Provider Interface — `providers/base.py`
 
-All providers in `providers/` implement this protocol. A provider handles model loading and generation for a specific backend (Ollama, Transformers, llama.cpp).
+All providers in `providers/` implement this protocol. A provider handles model loading and generation for a specific backend (Transformers, llama.cpp).
 
 ```python
 class InferenceProvider(Protocol):
@@ -104,7 +104,6 @@ class InferenceProvider(Protocol):
 
 | File                        | Provider         | Transport      |
 | --------------------------- | ---------------- | -------------- |
-| `providers/ollama_provider.py`    | Ollama           | HTTP API       |
 | `providers/transformers_provider.py` | Transformers     | Direct (PyTorch) |
 | `providers/llamacpp_provider.py`   | llama.cpp        | Python bindings |
 
@@ -199,7 +198,7 @@ class MetricsCollector(Protocol):
         Args:
             model_id: HuggingFace model identifier.
             mode: Inference mode (gpu_provider, cpu_baseline, airllm).
-            provider: Provider name (transformers, ollama, llamacpp).
+            provider: Provider name (transformers, llamacpp).
             prompt: Input prompt text.
             prompt_id: Prompt identifier (P1, P2, P3).
             quantization: Quantization level (4bit, 8bit, none).
