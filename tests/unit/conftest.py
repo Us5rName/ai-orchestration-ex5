@@ -20,6 +20,11 @@ from airllm_benchmark.providers.transformers_provider import (
 # Import sample_records/mock_record fixtures so pytest discovers them
 from tests.unit.fixtures_cli import mock_record  # noqa: F401
 from tests.unit.fixtures_metrics import sample_records  # noqa: F401
+from tests.unit.fixtures_report import (  # noqa: F401
+    empty_prompt_id_records,
+    report_experiment,
+    sample_report_records,
+)
 
 _PROVIDER = "airllm_benchmark.providers.transformers_helpers"
 _LLAMACPP_HELPERS = "airllm_benchmark.providers.llamacpp_helpers"
