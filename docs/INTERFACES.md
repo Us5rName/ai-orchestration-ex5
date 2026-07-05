@@ -2,9 +2,9 @@
 
 | Metadata      | Value                                  |
 | ------------- | -------------------------------------- |
-| **Version**   | 1.05                                   |
+| **Version**   | 1.06                                   |
 | **Based on**  | `docs/PRD.md` v1.00, `docs/PLAN.md` v1.00 |
-| **Changes**   | Added `BenchmarkSDK.validate()` + `ValidationResult` (§1, §10) per task 7.4; `BenchmarkSummaryResult` (§1) replacing bare dict per INCONSISTENCIES #2 |
+| **Changes**   | Added `BenchmarkSDK.generate_report()` + `ReportResult` (§1, §11) — additive §5 reporting layer (full table, CSV, six charts, narrative), opt-in via `--report`; Added `BenchmarkSDK.validate()` + `ValidationResult` (§1, §10) per task 7.4; `BenchmarkSummaryResult` (§1) replacing bare dict per INCONSISTENCIES #2 |
 
 ---
 
@@ -63,6 +63,25 @@ class BenchmarkSDK:
 
         Returns:
             ValidationResult — see §10.
+        """
+
+    def generate_report(
+        self, results_path: str, output_dir: str | None = None,
+    ) -> ReportResult:
+        """Generate the full BENCHMARK.md §5 report from persisted results.
+
+        Additive, opt-in — does not affect run_benchmark()'s existing
+        2-chart visualization path. Loads records via ResultWriter.load(),
+        then builds the full comparison table, CSV export, six charts
+        (V1-V6), and a hardware-aware narrative summary.
+
+        Args:
+            results_path: Path to a metrics_<timestamp>.json results file.
+            output_dir: Report output directory. Defaults to a per-run
+                subdirectory derived from results_path.
+
+        Returns:
+            ReportResult — see §11.
         """
 ```
 
@@ -449,4 +468,57 @@ runs inference. Exists alongside `--single` and `--run-all`:
 | `--single` | `BenchmarkSDK.run_single()` |
 | `--run-all` | `BenchmarkSDK.run_benchmark()` |
 | `--validate` | `BenchmarkSDK.validate()` |
+| `--report RESULTS_JSON [--assets-dir DIR]` | `BenchmarkSDK.generate_report()` |
 ```
+
+---
+
+## 11. Report Builder — `services/report_builder.py`
+
+Additive reporting layer implementing BENCHMARK.md §5: the full 10-column
+comparison table, CSV export, six charts (V1-V6, 300 DPI), and a
+hardware-aware narrative summary. Pure consumer of `ResultWriter.load()`
+output — reads `MetricsRecord` fields, `config/experiment.json` (tier
+mapping), and `config/hardware.json` (RAM reference line, hardware
+narrative strings). Does not modify `visualizer.py`, `chart_helpers.py`,
+`table_helpers.py`, or `sdk_summary.py`; `run_benchmark()`'s existing
+2-chart path is unchanged.
+
+```python
+@dataclass(frozen=True)
+class ReportResult:
+    """Full report artifacts. Returned by ReportBuilder.build()."""
+
+    table_text: str
+    chart_paths: list[str]
+    csv_path: str
+    summary_text: str
+
+
+class ReportBuilder:
+    """Builds the full §5 reporting-layer output from metrics records."""
+
+    def build(self, records: list[MetricsRecord], output_dir: str = "assets") -> ReportResult:
+        """Build the full report: table, CSV, six charts, narrative.
+
+        Args:
+            records: Metrics records to report on (from ResultWriter.load()).
+            output_dir: Directory for CSV + chart PNG output.
+
+        Returns:
+            ReportResult with all generated artifacts.
+        """
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `table_text` | str | Full §5.1 comparison table (Model, Tier, Mode, Load, TTFT, Runtime, Throughput, Peak RAM, Peak VRAM, Status) |
+| `chart_paths` | list[str] | Absolute paths to generated V1-V6 chart PNGs (charts with no data are skipped, not included) |
+| `csv_path` | str | Absolute path to the exported `metrics.csv` (18 `MetricsRecord` fields + derived `tier`) |
+| `summary_text` | str | Hardware-aware narrative: hardware line, key findings, AirLLM trade-off, anomalies |
+
+Chart functions live in `services/report_charts.py` (V1-V3) and
+`services/report_charts_extra.py` (V4-V6); shared bar-chart rendering is
+in `services/report_chart_core.py`; tier/grouping lookups are in
+`services/report_helpers.py`; the narrative builder is in
+`services/report_narrative.py`.

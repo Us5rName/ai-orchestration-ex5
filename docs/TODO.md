@@ -280,3 +280,24 @@ When an integration checkpoint fails:
 | 10.9 | **ISO/IEC 25010 mapping never written** | Noted in Phase 9 task 9.7 as intentionally deferred: "checklist item, never required by this project's own PRD/PLAN/TODO." No ISO/IEC 25010 software-quality mapping doc exists. Per the project's own rules, this is not required — but it was a checklist item. **Action:** Confirm whether this is still intentionally out-of-scope or should be added as a reference doc. | 🔄 Pending decision |
 
 **Summary:** 9 gaps identified. No critical bugs found — the happy path (Transformers provider, CPU/GPU/AirLLM runners, SDK, CLI) is fully wired and works end-to-end. All gaps are either orthogonal concerns (orphaned but harmless code, documentation gaps, missing CLI flags) or minor DRY violations (duplicate serialization). Remediation tasks are non-blocking and can be tackled in order of priority; none involve architectural rework.
+
+---
+
+## Phase 11 — Additive Reporting Layer (BENCHMARK.md §5)
+
+**Preamble:** `docs/BENCHMARK.md` §5 required an 8+-column comparison table, six charts (V1–V6, 300 DPI, value labels, OOM annotation, hardware-RAM reference line), CSV export, and a hardware-aware narrative summary — beyond what the existing `Visualizer` (2 charts, 5-column table) provides. This phase adds a new, additive reporting layer without changing any existing interface, signature, or behavior.
+
+| # | Task | Status |
+|----|------|--------|
+| 11.1 | `services/report_helpers.py` — tier lookup, tier/mode grouping, fixed `MODE_COLORS` (GPU=blue, CPU=orange, AirLLM=green per §5.2) | ✅ Done |
+| 11.2 | `services/report_tables.py` — full §5.1 comparison table + `export_metrics_csv` (18 fields + derived `tier`) | ✅ Done |
+| 11.3 | `services/report_chart_core.py` — shared 300-DPI grouped/stacked bar renderer (value labels, OOM hatch, reference line) | ✅ Done |
+| 11.4 | `services/report_charts.py` (V1–V3) + `services/report_charts_extra.py` (V4–V6) | ✅ Done |
+| 11.5 | `services/report_builder.py` + `services/report_narrative.py` — `ReportBuilder`, `ReportResult`, `build_narrative_summary`, `derive_report_output_dir` | ✅ Done |
+| 11.6 | `BenchmarkSDK.generate_report()` (via `sdk/sdk_report_helpers.py` to keep `sdk.py` ≤150 lines) + `--report`/`--assets-dir` CLI flags (`cli_dispatch.py`, `cli_printers.print_report_result`) | ✅ Done |
+| 11.7 | `docs/INTERFACES.md` §11, `docs/CONFIG.md` CSV note | ✅ Done |
+| 11.8 | Tests: `test_report_tables.py`, `test_report_charts.py`, `test_report_builder.py`, `fixtures_report.py` | ✅ Done |
+
+**Out of scope (documented as caveats, not implemented):** warm/cold load distinction, download-time-separate-from-load, GPU VRAM numeric capacity reference line, V5 prompt-sensitivity chart on current archived results (all existing `results/*.json` have empty `prompt_id`; the chart renders once future runs populate it, and skips gracefully otherwise). See the original plan for the full rationale table.
+
+**Non-breakage:** `MetricsRecord`, `table_helpers.format_comparison_table`, `chart_helpers.*`, `visualizer.Visualizer.*` (incl. `generate_all` → still exactly 2 paths), `result_writer.ResultWriter`, `sdk_summary.build_summary` — zero changes. `run_benchmark()`'s 2-chart path is unaffected; the full report is opt-in via `--report`.
