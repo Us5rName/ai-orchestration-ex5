@@ -128,3 +128,15 @@ class TestCpuRunnerDelegation:
         mock_collector = cpu_runner.MetricsCollector.return_value
         start_call = mock_collector.start.call_args
         assert start_call[1]["mode"] == "cpu_baseline"
+
+    def test_run_wires_first_token_hook(
+        self, mock_provider: MagicMock, _mock_collector: None
+    ) -> None:
+        """run() wires provider._on_first_token to collector.mark_first_token."""
+        from airllm_benchmark.sdk import cpu_runner
+        from airllm_benchmark.sdk.cpu_runner import CpuRunner
+
+        runner = CpuRunner()
+        runner.run(mock_provider, "test/model", "Test", 32)
+        mock_collector = cpu_runner.MetricsCollector.return_value
+        assert mock_provider._on_first_token == mock_collector.mark_first_token

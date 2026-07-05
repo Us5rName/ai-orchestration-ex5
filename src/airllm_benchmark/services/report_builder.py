@@ -1,7 +1,7 @@
 """Report orchestrator + narrative summary for the reporting layer (§5.3).
 
 New, additive module. Consumes ResultWriter.load() output; produces
-the full §5 table, CSV, six charts, and a hardware-aware narrative.
+the full §5 table, CSV, seven charts, and a hardware-aware narrative.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ class ReportResult:
 
     Attributes:
         table_text: Full §5.1 comparison table.
-        chart_paths: Absolute paths to the generated V1-V6 chart PNGs
+        chart_paths: Absolute paths to the generated V1-V7 chart PNGs
             (empty-data charts are skipped, not included).
         csv_path: Absolute path to the exported metrics CSV.
         summary_text: Hardware-aware narrative summary (§5.3).
@@ -46,7 +46,7 @@ class ReportBuilder:
     """Builds the full §5 reporting-layer output from metrics records."""
 
     def build(self, records: list[MetricsRecord], output_dir: str = "assets") -> ReportResult:
-        """Build the full report: table, CSV, six charts, narrative.
+        """Build the full report: table, CSV, seven charts, narrative.
 
         Args:
             records: Metrics records to report on (from ResultWriter.load()).
@@ -75,6 +75,7 @@ class ReportBuilder:
                 _charts_extra.render_latency_breakdown_chart(records, tier_lookup, output_dir),
                 _charts_extra.render_prompt_sensitivity_chart(records, output_dir),
                 _charts_extra.render_memory_vs_throughput_scatter(records, tier_lookup, output_dir),
+                _charts.render_vram_by_tier_chart(records, tier_lookup, hardware, output_dir),
             ]
             if path
         ]

@@ -36,6 +36,7 @@ VALID_HARDWARE = {
     "cpu": "AMD Ryzen 9 7950X",
     "gpu": "NVIDIA RTX 4090 24GB",
     "ram_gb": 128,
+    "vram_gb": 24,
     "disk_free_gb": 500,
     "os": "Ubuntu 24.04",
     "documented_by": "tester",
@@ -46,6 +47,7 @@ EMPTY_HARDWARE = {
     "cpu": "",
     "gpu": "",
     "ram_gb": 0,
+    "vram_gb": 0,
     "disk_free_gb": 0,
     "os": "",
     "documented_by": "",
@@ -129,4 +131,10 @@ class TestValidateHardware:
         partial = {**VALID_HARDWARE, "ram_gb": 0}
         hw = HardwareConfig(**partial)
         with pytest.raises(ValueError, match="ram_gb"):
+            validate_hardware(hw)
+
+    def test_zero_vram_raises(self) -> None:
+        partial = {**VALID_HARDWARE, "vram_gb": 0}
+        hw = HardwareConfig(**partial)
+        with pytest.raises(ValueError, match="vram_gb"):
             validate_hardware(hw)

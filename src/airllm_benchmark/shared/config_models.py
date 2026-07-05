@@ -61,6 +61,7 @@ class HardwareConfig:
     cpu: str
     gpu: str
     ram_gb: float
+    vram_gb: float
     disk_free_gb: float
     os: str
     documented_by: str
@@ -72,6 +73,7 @@ class HardwareConfig:
             self.cpu
             and self.gpu
             and self.ram_gb > 0
+            and self.vram_gb > 0
             and self.disk_free_gb > 0
             and self.os
             and self.documented_by

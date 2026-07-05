@@ -5,6 +5,7 @@ All external dependencies (psutil, torch) are mocked per project rules.
 
 from __future__ import annotations
 
+import time
 from unittest.mock import MagicMock, patch
 
 from airllm_benchmark.services.metrics import MetricsCollector
@@ -40,6 +41,8 @@ def test_collector_full_lifecycle() -> None:
         )
         c.mark_load_complete()
         c.mark_generation_start()
+        time.sleep(0.01)  # simulate real prefill latency before first token
+        c.mark_first_token()
         c.stop()
         record = c.get_record(tokens_generated=10, status="success")
 

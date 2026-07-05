@@ -28,6 +28,7 @@ def _hardware() -> HardwareConfig:
         cpu="Test CPU",
         gpu="Test GPU 24GB",
         ram_gb=62,
+        vram_gb=24,
         disk_free_gb=100,
         os="Test OS",
         documented_by="tester",

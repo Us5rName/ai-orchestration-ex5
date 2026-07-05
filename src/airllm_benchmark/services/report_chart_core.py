@@ -1,7 +1,6 @@
 """Shared 300-DPI grouped/stacked bar chart renderer for the report layer.
 
-New, additive module — does not modify chart_helpers.py. Used by
-report_charts.py to render V1-V4 (grouped/stacked bars).
+Used by report_charts.py to render V1-V4 (grouped/stacked bars).
 """
 
 from __future__ import annotations
@@ -39,6 +38,7 @@ def render_grouped_bar_chart(
     value_labels: bool = True,
     oom_hatch: bool = True,
     reference_line: tuple[float, str] | None = None,
+    log_scale: bool = False,
 ) -> str:
     """Render a grouped bar chart (one bar per series within each group).
 
@@ -54,6 +54,7 @@ def render_grouped_bar_chart(
         value_labels: Whether to draw value labels above each bar.
         oom_hatch: Whether to hatch bars flagged as non-success.
         reference_line: Optional (y_value, label) horizontal reference line.
+        log_scale: Use a log y-axis (for magnitude-spanning series).
 
     Returns:
         Absolute path to the generated PNG file.
@@ -93,6 +94,9 @@ def render_grouped_bar_chart(
         y_value, label = reference_line
         ax.axhline(y_value, color="black", linestyle="--", linewidth=1.5)
         ax.annotate(label, (0, y_value), textcoords="offset points", xytext=(0, 5), fontsize=9)
+
+    if log_scale and any(v > 0 for values in series.values() for v, _ in values):
+        ax.set_yscale("log")
 
     ax.set_xticks(list(group_positions))
     ax.set_xticklabels(groups, fontsize=10)

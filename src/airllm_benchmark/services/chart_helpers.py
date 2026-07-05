@@ -27,6 +27,8 @@ def _render_bar_chart(
     ylabel: str,
     title: str,
     output_path: str,
+    *,
+    log_scale: bool = False,
 ) -> str:
     """Render a bar chart and save as PNG.
 
@@ -36,6 +38,9 @@ def _render_bar_chart(
         ylabel: Label for the Y-axis.
         title: Chart title.
         output_path: File path for the output PNG.
+        log_scale: Use a log y-axis. Needed when modes span orders of
+            magnitude (e.g. GPU seconds vs. CPU-raw minutes) — a linear
+            axis flattens the faster bars to invisibility.
 
     Returns:
         Absolute path to the generated PNG file.
@@ -49,7 +54,11 @@ def _render_bar_chart(
     ax.bar(labels, values, color=colors)
     ax.set_ylabel(ylabel)
     ax.set_title(title)
-    ax.set_ylim(0, max(values) * 1.15 if values else 1.0)
+
+    if log_scale and any(v > 0 for v in values):
+        ax.set_yscale("log")
+    else:
+        ax.set_ylim(0, max(values) * 1.15 if values else 1.0)
 
     fig.tight_layout()
     fig.savefig(output_path, dpi=100)
@@ -79,9 +88,10 @@ def render_latency_chart(
     return _render_bar_chart(
         labels=modes,
         values=runtimes,
-        ylabel="Total Runtime (seconds)",
+        ylabel="Total Runtime (seconds, log scale)",
         title="Inference Latency Comparison",
         output_path=output_path,
+        log_scale=True,
     )
 
 

@@ -14,7 +14,7 @@ Per docs/INTERFACES.md §3 and docs/TODO.md task 5.3.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from airllm_benchmark.services.metrics import MetricsCollector, MetricsRecord
 
@@ -79,6 +79,10 @@ class CpuRunner:
         )
 
         try:
+            if hasattr(provider, "_on_first_token"):
+                # Real TTFT — only providers with a per-token hook support this.
+                cast(Any, provider)._on_first_token = collector.mark_first_token
+
             provider.load_model(model_id, DEFAULT_DEVICE)
             collector.mark_load_complete()
 

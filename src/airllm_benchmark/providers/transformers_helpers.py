@@ -10,14 +10,63 @@ inference service.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    StoppingCriteria,
+    StoppingCriteriaList,
+)
 
 from airllm_benchmark.shared.gatekeeper import call_with_rate_limit
 
 if TYPE_CHECKING:
+    import torch
     from transformers import PreTrainedModel, PreTrainedTokenizerBase
+
+
+class FirstTokenCallback(StoppingCriteria):
+    """Fires a callback the first time a generation step completes.
+
+    ``StoppingCriteria.__call__`` runs once per generated token (including
+    the first), which makes it a convenient, non-invasive hook for
+    measuring real time-to-first-token without changing ``generate()``'s
+    public signature. Always returns False — never actually stops
+    generation.
+    """
+
+    def __init__(self, on_first_token: Callable[[], None]) -> None:
+        """Store the callback to invoke on the first generation step."""
+        self._on_first_token = on_first_token
+        self._fired = False
+
+    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs: object) -> bool:
+        """Invoke the callback once, then no-op; never requests a stop."""
+        if not self._fired:
+            self._fired = True
+            self._on_first_token()
+        return False
+
+
+def build_generate_kwargs(
+    max_tokens: int, on_first_token: Callable[[], None] | None
+) -> dict[str, object]:
+    """Build kwargs for ``model.generate()``, wiring the TTFT hook if set.
+
+    Args:
+        max_tokens: Maximum number of tokens to generate.
+        on_first_token: Optional real-TTFT callback (see FirstTokenCallback).
+
+    Returns:
+        Kwargs dict for ``model.generate(**inputs, **kwargs)``.
+    """
+    kwargs: dict[str, object] = {"max_new_tokens": max_tokens}
+    if on_first_token is not None:
+        kwargs["stopping_criteria"] = StoppingCriteriaList([FirstTokenCallback(on_first_token)])
+    return kwargs
 
 
 def build_quant_config(quantization: str) -> BitsAndBytesConfig | None:

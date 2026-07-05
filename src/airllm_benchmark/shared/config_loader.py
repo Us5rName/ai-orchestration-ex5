@@ -79,6 +79,8 @@ def validate_hardware(hw: HardwareConfig) -> None:
         raise ValueError("Hardware field 'gpu' must be filled")
     if hw.ram_gb <= 0:
         raise ValueError("Hardware field 'ram_gb' must be > 0")
+    if hw.vram_gb <= 0:
+        raise ValueError("Hardware field 'vram_gb' must be > 0")
     if hw.disk_free_gb <= 0:
         raise ValueError("Hardware field 'disk_free_gb' must be > 0")
     if not hw.os:

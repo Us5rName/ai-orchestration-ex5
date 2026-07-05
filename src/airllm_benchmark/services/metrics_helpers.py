@@ -52,6 +52,7 @@ def assemble_record(
     ctx: dict[str, Any],
     load_time: float,
     gen_start_time: float,
+    first_token_time: float,
     start_time: float,
     stop_time: float,
     tokens_generated: int,
@@ -61,14 +62,17 @@ def assemble_record(
 ) -> MetricsRecord:
     """Assemble a MetricsRecord from collector internals.
 
-    Computes TTFT from generation start time and calculates
-    generation throughput from token count and generation duration.
+    Computes real TTFT (first-token latency) when the provider reported
+    one via ``mark_first_token``, and calculates generation throughput
+    from token count and generation duration.
 
     Args:
         collector_id: id() of the collector for run_id generation.
         ctx: Context dict stored by MetricsCollector.start().
         load_time: Finalized load_time_s value.
         gen_start_time: perf_counter value at generation start (0 if unset).
+        first_token_time: perf_counter value when the first token was
+            produced (0 if the provider never called mark_first_token).
         start_time: perf_counter value at collection start.
         stop_time: perf_counter value at collection stop.
         tokens_generated: Number of tokens produced.
@@ -80,10 +84,14 @@ def assemble_record(
     """
     total = stop_time - start_time
 
-    # TTFT = time from start to first token (generation start).
+    # TTFT = real time from generation start to first token produced.
+    # Unmeasured (no per-token hook for this provider) -> 0.0, not an
+    # approximation from load/setup time.
     ttft = (
-        gen_start_time - start_time if gen_start_time > 0 else load_time
-    )  # fallback if mark_generation_start not called
+        first_token_time - gen_start_time
+        if first_token_time > 0 and gen_start_time > 0
+        else 0.0
+    )
 
     # Generation throughput = tokens / generation_duration.
     gen_duration = stop_time - gen_start_time

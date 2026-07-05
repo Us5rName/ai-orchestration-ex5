@@ -74,6 +74,9 @@ class GpuRunner:
                 # Only TransformersProvider exposes this callback.
                 # Cast to Any to satisfy static type checker.
                 cast(Any, provider)._on_download_complete = collector.mark_download_complete
+            if hasattr(provider, "_on_first_token"):
+                # Real TTFT — only providers with a per-token hook support this.
+                cast(Any, provider)._on_first_token = collector.mark_first_token
 
             # Pass None (not a hardcoded device) so providers that accept it,
             # e.g. TransformersProvider, fall back to their own constructed

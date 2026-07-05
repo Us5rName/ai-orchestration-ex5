@@ -106,3 +106,15 @@ class TestGpuRunnerDelegation:
         assert "mark_load_complete" in calls
         assert "stop" in calls
         assert "get_record" in calls
+
+    def test_run_wires_first_token_hook(
+        self, mock_provider: MagicMock, _mock_collector: None
+    ) -> None:
+        """run() wires provider._on_first_token to collector.mark_first_token."""
+        from airllm_benchmark.sdk import gpu_runner
+        from airllm_benchmark.sdk.gpu_runner import GpuRunner
+
+        runner = GpuRunner()
+        runner.run(mock_provider, "test/model", "Test", 32)
+        mock_collector = gpu_runner.MetricsCollector.return_value
+        assert mock_provider._on_first_token == mock_collector.mark_first_token

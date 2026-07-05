@@ -65,9 +65,10 @@ def render_latency_by_tier_chart(
         tiers,
         series,
         _helpers.MODE_COLORS,
-        ylabel="Total Runtime (s)",
+        ylabel="Total Runtime (s, log scale)",
         title="Inference Latency by Model Tier and Mode",
         output_path=output_path,
+        log_scale=True,
     )
 
 
@@ -94,6 +95,32 @@ def render_memory_by_tier_chart(
         title="Memory Usage by Model Tier and Mode",
         output_path=output_path,
         reference_line=(ram_mb, "Total RAM"),
+    )
+
+
+def render_vram_by_tier_chart(
+    records: list[MetricsRecord],
+    tier_lookup: Callable[[str], str],
+    hardware: object,
+    output_dir: str,
+) -> str:
+    """V7: grouped bar chart of peak_vram_mb by tier x mode.
+
+    Draws a "Total VRAM" reference line from hardware.vram_gb.
+    """
+    if not records:
+        return ""
+    tiers, series = _grouped_series(records, tier_lookup, "peak_vram_mb")
+    output_path = os.path.join(output_dir, "vram_by_mode.png")
+    vram_mb = hardware.vram_gb * 1024
+    return _core.render_grouped_bar_chart(
+        tiers,
+        series,
+        _helpers.MODE_COLORS,
+        ylabel="Peak VRAM (MB)",
+        title="VRAM Usage by Model Tier and Mode",
+        output_path=output_path,
+        reference_line=(vram_mb, "Total VRAM"),
     )
 
 

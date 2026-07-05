@@ -39,6 +39,11 @@ class TestRealHardwareConfig:
         hw = load_hardware(TEST_CONFIG_DIR)
         assert hw.ram_gb == 64
 
+    def test_real_hardware_vram(self) -> None:
+        """VRAM is 24 GB."""
+        hw = load_hardware(TEST_CONFIG_DIR)
+        assert hw.vram_gb == 24
+
     def test_real_hardware_disk(self) -> None:
         """Free disk is 1000 GB."""
         hw = load_hardware(TEST_CONFIG_DIR)

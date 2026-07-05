@@ -31,6 +31,10 @@ class TransformersProvider(InferenceProvider):
         on_download_complete: Optional callback invoked after HF download
             finishes but before GPU transfer. Used by runners to separate
             download time from load time.
+
+    ``_on_first_token`` (set post-construction, not a constructor arg) is
+    an optional real-TTFT callback wired by runners the same way as
+    ``_on_download_complete`` — see docs/INTERFACES.md §5.
     """
 
     def __init__(
@@ -46,6 +50,7 @@ class TransformersProvider(InferenceProvider):
         self._tokenizer: PreTrainedTokenizerBase | None = None
         self._model_id: str | None = None
         self._on_download_complete = on_download_complete
+        self._on_first_token: Callable[[], None] | None = None
 
     # ——— InferenceProvider: load_model ———
 
@@ -117,7 +122,8 @@ class TransformersProvider(InferenceProvider):
 
         inputs = self._tokenizer(prompt, return_tensors="pt").to(self._device)
         input_len = len(inputs.input_ids[0])
-        outputs = self._model.generate(**inputs, max_new_tokens=max_tokens)
+        generate_kwargs = _helpers.build_generate_kwargs(max_tokens, self._on_first_token)
+        outputs = self._model.generate(**inputs, **generate_kwargs)
         # Decode full output, then strip the original prompt.
         full_text = self._tokenizer.decode(outputs[0], skip_special_tokens=True)
         generated_text = full_text[len(prompt) :]

@@ -69,6 +69,30 @@ class TestVisualizerLatencyChart:
             path = viz.generate_latency_chart(sample_records, tmpdir)
             assert os.path.getsize(path) > 0
 
+    def test_uses_log_scale(
+        self,
+        sample_records: list[MetricsRecord],
+    ) -> None:
+        """Latency spans orders of magnitude across modes (GPU vs. CPU-raw);
+        the chart must use a log y-axis or fast modes become unreadable."""
+        from airllm_benchmark.services import chart_helpers
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            captured: dict[str, object] = {}
+            original = chart_helpers._render_bar_chart
+
+            def spy(*args: object, **kwargs: object) -> str:
+                captured.update(kwargs)
+                return original(*args, **kwargs)
+
+            chart_helpers._render_bar_chart = spy
+            try:
+                Visualizer().generate_latency_chart(sample_records, tmpdir)
+            finally:
+                chart_helpers._render_bar_chart = original
+
+        assert captured.get("log_scale") is True
+
 
 class TestVisualizerMemoryChart:
     """Test generate_memory_chart produces valid PNG output."""

@@ -29,8 +29,8 @@ class MetricsCollector:
         c.start(model_id, mode, provider, prompt, pid, quant, max_tok)
         c.mark_download_complete()   # optional — separate download from transfer
         c.mark_load_complete()
-        c.mark_generation_start()    # marks TTFT boundary
-        # ... generate ...
+        c.mark_generation_start()    # generation phase boundary
+        # ... generate (provider may call c.mark_first_token() on token 1) ...
         c.stop()
         record = c.get_record(tokens, status, error)
     """
@@ -46,6 +46,7 @@ class MetricsCollector:
         self._download_time: float = 0.0
         self._load_time: float = 0.0
         self._gen_start_time: float = 0.0
+        self._first_token_time: float = 0.0
         self._stop_time: float = 0.0
         self._ctx: dict[str, Any] = {}
 
@@ -73,6 +74,7 @@ class MetricsCollector:
         self._download_time = 0.0
         self._load_time = 0.0
         self._gen_start_time = 0.0
+        self._first_token_time = 0.0
         self._stop_time = 0.0
         _sampler.VramTracker.reset()
         self._ram.start()
@@ -93,8 +95,20 @@ class MetricsCollector:
             self._load_time = time.perf_counter() - self._start_time
 
     def mark_generation_start(self) -> None:
-        """Mark generation start. Used to compute TTFT and throughput."""
+        """Mark generation start. Used as the TTFT/throughput reference point."""
         self._gen_start_time = time.perf_counter()
+
+    def mark_first_token(self) -> None:
+        """Mark the moment the first generated token is produced.
+
+        Called by providers that support per-token callbacks (currently
+        only TransformersProvider, via its optional ``_on_first_token``
+        hook). If never called, ``ttft_s`` falls back to 0.0 — real
+        first-token latency is simply unmeasured for that provider,
+        rather than being approximated from load/setup time.
+        """
+        if self._first_token_time == 0.0:
+            self._first_token_time = time.perf_counter()
 
     def stop(self) -> None:
         """Stop memory sampling and finalize timing."""
@@ -125,6 +139,7 @@ class MetricsCollector:
             ctx=self._ctx,
             load_time=self._load_time,
             gen_start_time=self._gen_start_time,
+            first_token_time=self._first_token_time,
             start_time=self._start_time,
             stop_time=self._stop_time,
             tokens_generated=tokens_generated,

@@ -21,8 +21,8 @@ Each inference run produces one record appended to the JSON array.
 | `prompt_id`        | string   | Prompt identifier (P1, P2, P3)                 |
 | `quantization`     | string   | `"4bit"`, `"8bit"`, or `"none"`                |
 | `max_new_tokens`   | integer  | Token generation limit                         |
-| `load_time_s`      | float    | Seconds to load model into memory              |
-| `ttft_s`           | float    | Time to first token (seconds)                  |
+| `load_time_s`      | float    | Seconds to download + load model (setup time)  |
+| `ttft_s`           | float    | Real time-to-first-token, from generation start to the first token produced (seconds). `0.0` when the provider does not support per-token measurement (see INTERFACES.md metrics section) — never approximated from load/setup time. |
 | `total_runtime_s`  | float    | Total inference time (seconds)                 |
 | `tokens_generated` | integer  | Number of tokens produced                      |
 | `generation_throughput` | float | Tokens per second during generation phase      |
@@ -108,6 +108,7 @@ To select a provider for GPU or CPU baseline, set `gpu_provider` or `cpu_baselin
   "cpu": "",
   "gpu": "",
   "ram_gb": 0,
+  "vram_gb": 0,
   "disk_free_gb": 0,
   "os": "",
   "documented_by": "",
@@ -115,7 +116,7 @@ To select a provider for GPU or CPU baseline, set `gpu_provider` or `cpu_baselin
 }
 ```
 
-> All fields must be filled before running benchmarks. Empty values cause the SDK to abort with a clear error.
+> All fields must be filled before running benchmarks. Empty/zero values cause the SDK to abort with a clear error.
 
 ### Fields
 
@@ -124,6 +125,7 @@ To select a provider for GPU or CPU baseline, set `gpu_provider` or `cpu_baselin
 | `cpu`            | string  | CPU model name                        |
 | `gpu`            | string  | GPU model name + VRAM                 |
 | `ram_gb`         | number  | Total system RAM (GB)                 |
+| `vram_gb`        | number  | Total GPU VRAM (GB) — reference line for the V7 VRAM chart (`report_charts.py::render_vram_by_tier_chart`) |
 | `disk_free_gb`   | number  | Free disk space (GB)                  |
 | `os`             | string  | Operating system + version            |
 | `documented_by`  | string  | Who documented the specs              |

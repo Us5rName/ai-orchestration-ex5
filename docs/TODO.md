@@ -301,3 +301,25 @@ When an integration checkpoint fails:
 **Out of scope (documented as caveats, not implemented):** warm/cold load distinction, download-time-separate-from-load, GPU VRAM numeric capacity reference line, V5 prompt-sensitivity chart on current archived results (all existing `results/*.json` have empty `prompt_id`; the chart renders once future runs populate it, and skips gracefully otherwise). See the original plan for the full rationale table.
 
 **Non-breakage:** `MetricsRecord`, `table_helpers.format_comparison_table`, `chart_helpers.*`, `visualizer.Visualizer.*` (incl. `generate_all` → still exactly 2 paths), `result_writer.ResultWriter`, `sdk_summary.build_summary` — zero changes. `run_benchmark()`'s 2-chart path is unaffected; the full report is opt-in via `--report`.
+
+---
+
+## Phase 12 — Metrics & Chart Bug Fixes (2026-07-05)
+
+**Preamble:** A real E2E pass (GPU + CPU-baseline single runs, `--report`, and a partial `--run-all`
+against actual hardware — RTX 3090, real Qwen2.5 checkpoints) surfaced three defects: `ttft_s`
+silently measured setup time instead of first-token latency, the latency chart's linear y-axis
+made GPU/AirLLM bars unreadable next to CPU-raw's much larger values, and no chart existed for
+`peak_vram_mb` despite it being fully collected and tabulated (flagged as out-of-scope caveat in
+Phase 11). Fixed in place; no interface behavior removed, only corrected/extended.
+
+| # | Task | Status |
+|----|------|--------|
+| 12.1 | Real TTFT: optional `_on_first_token` hook (duck-typed like `_on_download_complete`, not a protocol change) wired through `gpu_runner.py`/`cpu_runner.py`; `transformers_provider.py` fires it via a `StoppingCriteria` (`transformers_helpers.py::FirstTokenCallback`, `build_generate_kwargs`); `MetricsCollector.mark_first_token()`; `assemble_record` now computes real `ttft_s` or `0.0` (unmeasured) instead of approximating from load/setup time. `docs/INTERFACES.md` §5, `docs/CONFIG.md` §1 updated. | ✅ Done |
+| 12.2 | Log-scale latency charts: `render_grouped_bar_chart(..., log_scale=True)` in `report_chart_core.py`, applied to V1 (`report_charts.py::render_latency_by_tier_chart`); legacy `chart_helpers.py::render_latency_chart` (`_render_bar_chart(..., log_scale=True)`) gets the same treatment since `run_benchmark()`/`--run-all` still goes through the old `Visualizer`. | ✅ Done |
+| 12.3 | New V7 VRAM-by-tier chart: `report_charts.py::render_vram_by_tier_chart` (mirrors V2, groups on `peak_vram_mb`, "Total VRAM" reference line from new `hardware.json` field `vram_gb`); wired into `ReportBuilder.build()`; `docs/INTERFACES.md` §11 (now "V1-V7"/"seven charts"), `docs/CONFIG.md` §3 updated. | ✅ Done |
+| 12.4 | Tests + full suite: `test_metrics_collector.py`, `test_metrics_edge_cases.py`, `test_gpu_runner_delegation.py`, `test_cpu_runner_delegation.py`, `test_transformers_generate.py`, `test_visualizer_charts.py`, `test_report_charts.py`, `test_config_models.py`, `test_config_loader.py`, `test_config_real_hardware.py` extended/added. 303 passed, 91.47% coverage, ruff = 0, line cap passed. | ✅ Done |
+
+**Verification:** Re-ran the same real E2E commands used to find the bugs. GPU medium-tier single run: `ttft_s` dropped from the buggy 4.61s to a real 0.44s (throughput 15.2 tok/s implies ~65ms/token, consistent with a sub-second prefill). `--report` on a small-tier GPU-vs-CPU-baseline result set (GPU ~4-6s, CPU-raw ~139s) rendered the latency chart with both bars visible on a log axis (previously CPU-raw would flatten GPU/AirLLM to invisibility on a linear axis), and produced `vram_by_mode.png` with a 24GB reference line.
+
+**Non-breakage:** `InferenceProvider` protocol (`providers/base.py`) unchanged — the TTFT hook follows the existing `_on_download_complete` duck-typing precedent, not a signature change. `HardwareConfig` gained a required `vram_gb` field (all committed `config/hardware.json`/`tests/config/hardware.json` fixtures updated accordingly).

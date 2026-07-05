@@ -34,7 +34,8 @@ def test_collector_timing_accuracy() -> None:
         c.start("m", "gpu_provider", "t", "p", "P1", "none", 32)
         c.mark_load_complete()
         c.mark_generation_start()
-        time.sleep(0.05)  # Ensure total > load_time
+        time.sleep(0.05)  # simulate real prefill latency before first token
+        c.mark_first_token()
         c.stop()
         record = c.get_record(10, "success")
 

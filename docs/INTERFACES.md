@@ -245,7 +245,20 @@ class MetricsCollector(Protocol):
         """
 
     def mark_generation_start(self) -> None:
-        """Mark generation start. Used to compute TTFT and throughput."""
+        """Mark generation start. Reference point for TTFT and throughput."""
+
+    def mark_first_token(self) -> None:
+        """Mark the moment the first generated token is produced.
+
+        Optional — only called by providers that support a per-token
+        callback (currently TransformersProvider, via its optional
+        ``_on_first_token`` hook, wired in by GpuRunner/CpuRunner using the
+        same duck-typing pattern as ``_on_download_complete``; this is not
+        part of the `InferenceProvider` protocol). ``ttft_s`` is
+        ``first_token_time - generation_start_time`` when this was called,
+        else ``0.0`` (unmeasured for that provider) — never approximated
+        from load/setup time.
+        """
 
     def stop(self) -> None:
         """Stop memory sampling and finalize timing."""
@@ -476,13 +489,14 @@ runs inference. Exists alongside `--single` and `--run-all`:
 ## 11. Report Builder — `services/report_builder.py`
 
 Additive reporting layer implementing BENCHMARK.md §5: the full 10-column
-comparison table, CSV export, six charts (V1-V6, 300 DPI), and a
+comparison table, CSV export, seven charts (V1-V7, 300 DPI), and a
 hardware-aware narrative summary. Pure consumer of `ResultWriter.load()`
 output — reads `MetricsRecord` fields, `config/experiment.json` (tier
-mapping), and `config/hardware.json` (RAM reference line, hardware
+mapping), and `config/hardware.json` (RAM/VRAM reference lines, hardware
 narrative strings). Does not modify `visualizer.py`, `chart_helpers.py`,
 `table_helpers.py`, or `sdk_summary.py`; `run_benchmark()`'s existing
-2-chart path is unchanged.
+2-chart path is unchanged (its latency chart independently gained a
+log-scale y-axis — see `services/chart_helpers.py::render_latency_chart`).
 
 ```python
 @dataclass(frozen=True)
@@ -499,7 +513,7 @@ class ReportBuilder:
     """Builds the full §5 reporting-layer output from metrics records."""
 
     def build(self, records: list[MetricsRecord], output_dir: str = "assets") -> ReportResult:
-        """Build the full report: table, CSV, six charts, narrative.
+        """Build the full report: table, CSV, seven charts, narrative.
 
         Args:
             records: Metrics records to report on (from ResultWriter.load()).
@@ -513,12 +527,22 @@ class ReportBuilder:
 | Field | Type | Description |
 |-------|------|-------------|
 | `table_text` | str | Full §5.1 comparison table (Model, Tier, Mode, Load, TTFT, Runtime, Throughput, Peak RAM, Peak VRAM, Status) |
-| `chart_paths` | list[str] | Absolute paths to generated V1-V6 chart PNGs (charts with no data are skipped, not included) |
+| `chart_paths` | list[str] | Absolute paths to generated V1-V7 chart PNGs (charts with no data are skipped, not included) |
 | `csv_path` | str | Absolute path to the exported `metrics.csv` (18 `MetricsRecord` fields + derived `tier`) |
 | `summary_text` | str | Hardware-aware narrative: hardware line, key findings, AirLLM trade-off, anomalies |
 
-Chart functions live in `services/report_charts.py` (V1-V3) and
+Chart functions live in `services/report_charts.py` (V1-V3, V7) and
 `services/report_charts_extra.py` (V4-V6); shared bar-chart rendering is
 in `services/report_chart_core.py`; tier/grouping lookups are in
 `services/report_helpers.py`; the narrative builder is in
 `services/report_narrative.py`.
+
+| Chart | Function | Description |
+|-------|----------|--------------|
+| V1 | `render_latency_by_tier_chart` | Grouped bar, `total_runtime_s` by tier x mode. Log-scale y-axis (GPU and CPU-raw latency span orders of magnitude). |
+| V2 | `render_memory_by_tier_chart` | Grouped bar, `peak_ram_mb` by tier x mode, with a "Total RAM" reference line. |
+| V3 | `render_throughput_chart` | Grouped bar, `generation_throughput` by tier x mode (successful runs only). |
+| V4 | `render_latency_breakdown_chart` | Stacked bar, Load/TTFT/Generation time by tier x mode. |
+| V5 | `render_prompt_sensitivity_chart` | Line chart, `total_runtime_s` by prompt_id, one line per (model, mode). |
+| V6 | `render_memory_vs_throughput_scatter` | Scatter, `peak_ram_mb` vs `generation_throughput` (successful runs only). |
+| V7 | `render_vram_by_tier_chart` | Grouped bar, `peak_vram_mb` by tier x mode, with a "Total VRAM" reference line from `hardware.vram_gb`. |
