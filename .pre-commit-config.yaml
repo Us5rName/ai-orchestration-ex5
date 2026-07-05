@@ -33,8 +33,14 @@ repos:
         language: system
         pass_filenames: false
 
+      - id: check-secrets
+        name: secret scan (generic patterns)
+        entry: uv run python scripts/check-secrets.py
+        language: system
+        pass_filenames: false
+
       - id: no-secrets
-        name: secret scan
+        name: secret scan (legacy — kept for compatibility)
         entry: uv run python scripts/check_no_secrets.py
         language: system
         pass_filenames: false

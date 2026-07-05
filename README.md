@@ -26,6 +26,7 @@ from disk; this repo measures exactly what that buys you — and what it costs.
 - [Quick start](#quick-start)
 - [Providers / backends](#providers--backends)
 - [Quality gates](#quality-gates)
+- [Security checks](#security-checks)
 - [Attribution](#attribution)
 - [License](#license)
 - [Status & roadmap](#status--roadmap)
@@ -197,6 +198,21 @@ uv run python scripts/check_source_archives.py
 uv run python scripts/check_planning_ids.py
 uv run python scripts/check_workflow_permissions.py
 ```
+
+## Security checks
+
+A three-tier strategy protects against accidental credential leaks:
+
+1. **Tier 1 (Public):** Generic secret patterns (passwords, API keys) scanned via
+   `scripts/check-secrets.py` in pre-commit and CI — transparent, team-wide
+2. **Tier 2 (Local-only):** Company-specific patterns in `.git/hooks/pre-commit`
+   — private, not committed, customized per developer/org
+3. **Tier 3 (Runtime):** Production monitoring for post-breach detection
+
+**Getting started:**
+- Generic checks run automatically via pre-commit
+- For local-only checks, see [docs/SECURITY_CHECKS.md](docs/SECURITY_CHECKS.md)
+  and customize `.git/hooks/pre-commit.template`
 
 ## Attribution
 

@@ -101,6 +101,16 @@ src/airllm_benchmark/
 - **Prompt Log**: `docs/PROMPT_LOG.md` — prompts, context, decisions, improvements.
 - **Git**: Meaningful commits, feature branches.
 
+## 6a. Security Checks
+- **Three-tier strategy**: Committed (generic patterns) + Local-only (company-specific) + Runtime monitoring.
+- **Tier 1 (Public)**: `scripts/check-secrets.py` scans for generic secret patterns (passwords, API keys, tokens).
+  Runs in pre-commit and CI; blocks commits/merges if secrets detected.
+- **Tier 2 (Local-only)**: `.git/hooks/pre-commit.template` — customize for company patterns.
+  Not committed; each developer can add project-specific checks without exposing strategy.
+- **Tier 3 (Runtime)**: Production monitoring (external systems, not in repo).
+- **Key rule**: Never commit company-specific secret patterns. Generic patterns only in repo.
+- **See**: [`docs/SECURITY_CHECKS.md`](docs/SECURITY_CHECKS.md) for setup and examples.
+
 ## 7. Research & Analysis
 - **Analysis Notebook**: `notebooks/analysis.ipynb` — results analysis with LaTeX formulas.
 - **Visualization**: High-resolution charts in `assets/` (Bar, Line, Scatter, Heatmap).

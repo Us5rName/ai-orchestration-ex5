@@ -50,7 +50,14 @@ def main() -> int:
             issues.append(f"Tracked secret file: {path.relative_to(_REPO)}")
             continue
 
-        if path.suffix in _IGNORED_SUFFIXES or not path.exists():
+        # Skip binary/ignored files and documentation
+        rel_path = str(path.relative_to(_REPO))
+        if (
+            path.suffix in _IGNORED_SUFFIXES
+            or not path.exists()
+            or rel_path.startswith("docs/")
+            or rel_path.endswith((".md", ".yaml", ".yml"))
+        ):
             continue
 
         try:

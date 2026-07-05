@@ -47,7 +47,10 @@ jobs:
       - name: Project invariants (paths, layering, config)
         run: uv run python scripts/validate_repo.py
 
-      - name: Secret scan
+      - name: Secret scan (generic patterns)
+        run: uv run python scripts/check-secrets.py
+
+      - name: Secret scan (legacy — kept for compatibility)
         run: uv run python scripts/check_no_secrets.py
 
       - name: Required docs present
