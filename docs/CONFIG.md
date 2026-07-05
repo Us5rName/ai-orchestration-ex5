@@ -32,6 +32,11 @@ Each inference run produces one record appended to the JSON array.
 | `error`            | string   | Error message if status != `"success"`         |
 | `timestamp`        | string   | ISO 8601 timestamp of run                      |
 
+`assets/metrics.csv` (written by `services/report_tables.export_metrics_csv`,
+per docs/INTERFACES.md §11) mirrors this schema exactly, plus one derived
+column: `tier` (`"small"`/`"medium"`/`"large"`/`"unknown"`, resolved from
+`config/experiment.json`). No schema change to `MetricsRecord` itself.
+
 ---
 
 ## 2. Experiment Configuration — `config/experiment.json`
