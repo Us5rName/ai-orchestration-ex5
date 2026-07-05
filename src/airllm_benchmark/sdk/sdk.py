@@ -81,6 +81,7 @@ class BenchmarkSDK:
         prompt: str,
         provider: str | None = None,
         quantization: str = "none",
+        max_new_tokens: int | None = None,
     ) -> MetricsRecord:
         """Run a single inference and return metrics.
 
@@ -90,35 +91,34 @@ class BenchmarkSDK:
             prompt: Input text to complete.
             provider: Inference provider name (default from config).
             quantization: Quantization level (``"4bit"``, ``"8bit"``, ``"none"``).
+            max_new_tokens: Token limit; defaults to config value if None.
 
         Returns:
             MetricsRecord from this run.
         """
         config = load_experiment(self._config_dir)
         model_id = _helpers.resolve_model_id(config, model_id)
-
+        tokens = max_new_tokens if max_new_tokens is not None else config.max_new_tokens
         # AirLLM is builtin — no external provider needed.
         if mode == "airllm":
             from airllm_benchmark.sdk.airllm_runner import AirllmRunner
-
             airllm_runner = AirllmRunner()
             return airllm_runner.run(
                 provider=None,
                 model_id=model_id,
                 prompt=prompt,
-                max_tokens=config.max_new_tokens,
+                max_tokens=tokens,
                 quantization=quantization,
             )
 
         provider_name = provider or _helpers._resolve_provider(config, mode)
         prov = _helpers.create_provider(provider_name, config.provider_config, quantization)
         runner = self._runner_mgr.get_runner(mode)
-
         return runner.run(
             provider=prov,
             model_id=model_id,
             prompt=prompt,
-            max_tokens=config.max_new_tokens,
+            max_tokens=tokens,
             quantization=quantization,
         )
     # ——— INTERFACES.md §1: generate_visualization ———

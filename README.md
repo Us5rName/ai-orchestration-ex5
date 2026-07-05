@@ -180,7 +180,7 @@ Both GPU and CPU baseline runners are provider-configurable via
 | --- | --- | --- |
 | **Transformers** | ✅ Wired (default) | HuggingFace `AutoModel*`; GPU and CPU targets; bitsandbytes 4-bit |
 | **AirLLM** | ✅ Builtin runner | Layer-by-layer paged inference for the large-model scenario |
-| **llama.cpp** | 🟡 Implemented, unwired | `LlamaCppProvider` is complete + 100% unit-tested but not yet registered in `create_provider()` (see [`docs/INCONSISTENCIES.md`](docs/INCONSISTENCIES.md) #3) |
+| **llama.cpp** | ✅ Wired (opt-in) | `LlamaCppProvider` is complete, unit-tested (36 tests, 100% coverage), and registered in `create_provider()` — select via `gpu_provider` or `cpu_baseline_provider` in config |
 
 ## Quality gates
 
@@ -246,15 +246,15 @@ under Attribution above retain their own licenses.
 ## Status & roadmap
 
 All 50 tasks across 9 phases are complete ([`docs/TODO.md`](docs/TODO.md)
-§Summary). Deferred, non-blocking follow-ups are tracked in
-[`docs/INCONSISTENCIES.md`](docs/INCONSISTENCIES.md):
+§Summary). All three deferred follow-up items are now resolved
+(see [`docs/INCONSISTENCIES.md`](docs/INCONSISTENCIES.md)):
 
-- **#2** — optional typed SDK return dataclasses (`BenchmarkResult` /
-  `VisualizationResult`).
-- **#3** — wire `LlamaCppProvider` into `create_provider()` / config selection.
-- A full parameter sweep (prompts × quantization × `max_new_tokens`) is designed
-  in [`notebooks/analysis.ipynb`](notebooks/analysis.ipynb) §5 but not executed —
-  cost-prohibitive on this hardware.
+- ✅ **#2** — typed SDK return dataclasses (`BenchmarkSummaryResult`).
+- ✅ **#3** — `LlamaCppProvider` wired into `create_provider()` (opt-in).
+- ✅ **Parameter sweep** — GPU-baseline sweep executed and integrated into
+  [`notebooks/analysis.ipynb`](notebooks/analysis.ipynb) §5:
+  P1/P2/P3 × {8, 32, 128} tokens (unquantized). Results in
+  [`results/metrics_sweep.json`](results/metrics_sweep.json).
 
 ## Repository facts
 
