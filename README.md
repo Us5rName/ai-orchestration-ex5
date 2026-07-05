@@ -1,22 +1,41 @@
-# AirLLM Inference Benchmark
+# 🧮 AirLLM Inference Benchmark
 
 [![CI](https://github.com/Us5rName/ai-orchestration-ex5/actions/workflows/ci.yml/badge.svg)](https://github.com/Us5rName/ai-orchestration-ex5/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
 ![uv](https://img.shields.io/badge/package%20manager-uv-de5fe9)
 ![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)
 ![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen)
+[![Cost](https://img.shields.io/badge/API%20cost-%240%20(local)-success)](docs/AI_USAGE_AND_COST.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 `LLM inference` · `benchmarking` · `AirLLM` · `GPU vs CPU` · `quantization` · `HuggingFace Transformers` · `llama.cpp`
 
-Large language models demand more GPU/CPU memory than most machines have to
-spare. **[AirLLM](https://github.com/lyogavin/airllm)** trades latency for
-accessibility — it runs models far larger than available memory via
-layer-by-layer paged inference, streaming weights from disk instead of
-holding the whole model in RAM/VRAM at once.
+A reproducible benchmark that proves and quantifies the memory-vs-latency
+trade-off of paged LLM inference on real hardware. **[AirLLM](https://github.com/lyogavin/airllm)**
+runs models far larger than available memory by streaming weights layer-by-layer
+from disk; this repo measures exactly what that buys you — and what it costs.
 
-This repo is a reproducible benchmark that proves and quantifies that
-trade-off on real hardware, comparing three memory scenarios head-to-head:
+## Contents
+
+- [Overview — in 30 seconds](#overview--in-30-seconds)
+- [What's in this repo](#whats-in-this-repo)
+- [How a benchmark run works](#how-a-benchmark-run-works)
+- [Configuration at a glance](#configuration-at-a-glance)
+- [Results](#results)
+- [Cost](#cost)
+- [Quick start](#quick-start)
+- [Providers / backends](#providers--backends)
+- [Quality gates](#quality-gates)
+- [Attribution](#attribution)
+- [License](#license)
+- [Status & roadmap](#status--roadmap)
+- [Repository facts](#repository-facts)
+
+## Overview — in 30 seconds
+
+The benchmark compares three memory scenarios head-to-head. The **only** variable
+that matters is whether the model fits in available memory — not which inference
+library is used:
 
 | Scenario | What it shows | Expected outcome |
 | --- | --- | --- |
@@ -24,44 +43,83 @@ trade-off on real hardware, comparing three memory scenarios head-to-head:
 | **Large model on raw CPU** | No paging, no compression — model exceeds available RAM | OOM or extreme slowness |
 | **Same large model via AirLLM** | Paged + quantized inference | Succeeds, at a steep latency cost |
 
-The key variable is whether the model **fits in available memory** — not
-which inference library is used. Providers (Transformers, llama.cpp) are
-swappable and support both GPU and CPU targets; see [`docs/PRD.md`](docs/PRD.md)
-for the full requirements and [`docs/PLAN.md`](docs/PLAN.md) for the
-architecture.
+Everything flows through a single SDK entry point; runners delegate to swappable
+providers (facade pattern), while AirLLM has its own builtin paged runner:
 
-## Install
-
-```sh
-uv sync --all-extras
-cp .env-example .env   # add your HF_TOKEN
+```mermaid
+flowchart LR
+    CLI["src/main.py<br/>(CLI)"] --> SDK["BenchmarkSDK<br/>(single entry point)"]
+    SDK --> GPU["GpuRunner"]
+    SDK --> CPU["CpuRunner"]
+    SDK --> AIR["AirLlmRunner<br/>(builtin, paged)"]
+    GPU --> P["InferenceProvider"]
+    CPU --> P
+    P --> TF["TransformersProvider"]
+    P --> LC["LlamaCppProvider"]
+    SDK --> SVC["metrics · visualizer · result_writer"]
 ```
 
-## Usage
+See [`docs/PRD.md`](docs/PRD.md) for the full requirements and
+[`docs/PLAN.md`](docs/PLAN.md) for the C4 architecture and ADRs.
 
-```sh
-uv run python src/main.py --validate     # dry-run: config, providers, HF cache — no inference
-uv run python src/main.py --run-all      # full three-mode benchmark
-uv run python src/main.py --single --mode airllm --model small
+## What's in this repo
+
+An SDK-first layout — no external consumer imports internal services directly,
+and every source file stays under 150 lines (enforced in CI):
+
+| Layer | Modules | Role |
+| --- | --- | --- |
+| **`sdk/`** | `sdk.py`, `runner.py`, `gpu_runner.py`, `cpu_runner.py`, `airllm_runner.py` | Single entry point + runners (GPU/CPU delegate to a provider; AirLLM is builtin) |
+| **`providers/`** | `base.py`, `transformers_provider.py`, `llamacpp_provider.py` | `InferenceProvider` protocol + facades over inference backends |
+| **`services/`** | `metrics.py`, `visualizer.py`, `result_writer.py` | Timing + psutil memory sampling, charts/tables, JSON persistence |
+| **`shared/`** | `config_loader.py`, `gatekeeper.py`, `cache_check.py`, `version.py` | Config, the API rate-limit gatekeeper, HF-cache checks |
+
+A full per-module line-count inventory is in
+[Repository facts](#repository-facts) (machine-generated).
+
+## How a benchmark run works
+
+One benchmark scenario runs as a straight-line pipeline from the CLI through the
+SDK to a persisted metrics record and charts:
+
+```mermaid
+sequenceDiagram
+    participant CLI as src/main.py
+    participant SDK as BenchmarkSDK
+    participant R as Runner
+    participant P as Provider / AirLLM
+    participant M as MetricsCollector
+    participant W as ResultWriter
+    CLI->>SDK: run_single(mode, model)
+    SDK->>R: run()
+    R->>P: load_model() → generate()
+    R->>M: sample timing + peak RAM/VRAM
+    R-->>SDK: MetricsRecord
+    SDK->>W: persist → results/metrics.json
+    SDK->>W: Visualizer → assets/*.png
 ```
 
-Results are written to `results/metrics.json`; charts and the comparison
-table land in `assets/`.
+Two RL-free facts worth stating up front: the benchmark is intentionally
+**single-threaded** so peak-memory measurements per run stay uncontaminated
+(`shared/gatekeeper.py`), and it **never probes or synthesizes** model
+identifiers — everything runs from explicit config.
 
-## Configuration
+## Configuration at a glance
 
-Tunable values live in `config/experiment.json` (models, prompts,
-providers, quantization), `config/hardware.json` (the documented
-benchmark machine), and `config/rate_limits.json` (external-call rate
-limits enforced by the API Gatekeeper). See [`docs/CONFIG.md`](docs/CONFIG.md).
+All tunable values live in `config/` — zero hardcoding
+([`docs/CONFIG.md`](docs/CONFIG.md) has the full schemas):
 
-## Cost & resource profile
+| File | Key knobs |
+| --- | --- |
+| `config/experiment.json` | `models` (small `Qwen2.5-0.5B` / medium `3B` / large `32B`), `prompts` (P1–P3), `max_new_tokens` (32), `quantization` (`4bit`), `gpu_provider` / `cpu_baseline_provider` (`transformers`) |
+| `config/hardware.json` | Documented benchmark machine — CPU, GPU, RAM, disk, OS (no invented specs) |
+| `config/rate_limits.json` | External-call limits enforced by the API Gatekeeper (HuggingFace: 30 calls/min) |
 
-Every model here is an open, ungated checkpoint run **locally** — there is
-no per-token or per-API-call dollar cost. The real currency this benchmark
-trades in is **time, memory, and disk**. Numbers below are actual measured
-results from this repo's own hardware (see `config/hardware.json`), not
-estimates:
+## Results
+
+Actual measured results from this repo's own hardware (see
+[`config/hardware.json`](config/hardware.json) and
+[`results/metrics_phase8.json`](results/metrics_phase8.json)) — not estimates:
 
 | Scenario | Model | Load/TTFT | Total runtime | Throughput | Peak RAM | Peak VRAM | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -73,15 +131,55 @@ estimates:
 ![Memory comparison](assets/phase8/memory_chart.png)
 
 The AirLLM row is the whole point: a model that needs **~65.5GB unquantized**
-runs in **~6.9GB of RAM** via paging — at the cost of ~18 minutes to answer
-one short prompt. The CPU-baseline row (same model, no paging, no
-quantization) was run under an external memory/timeout watchdog rather than
-letting it exhaust this machine's RAM uncontrolled — after 15 minutes it had
-consumed **38.6GB and counting** (this sandbox has 0 swap, so the process was
-stuck in an uninterruptible disk-I/O wait, not making meaningful progress)
-and was killed. That timeout **is** the "OOM or extreme slowness" result the
-raw-CPU scenario is supposed to produce (see `docs/TODO.md` task 8.3 and
+runs in **~6.9GB of RAM** via paging — at the cost of ~18 minutes to answer one
+short prompt. The CPU-baseline row (same model, no paging, no quantization) was
+run under an external memory/timeout watchdog rather than letting it exhaust this
+machine's RAM uncontrolled — after 15 minutes it had consumed **38.6GB and
+counting** (this sandbox has 0 swap, so the process was stuck in an
+uninterruptible disk-I/O wait, not making meaningful progress) and was killed.
+That timeout **is** the "OOM or extreme slowness" result the raw-CPU scenario is
+supposed to produce (see [`docs/TODO.md`](docs/TODO.md) task 8.3 and
 [`docs/PRD.md`](docs/PRD.md) FR-03).
+
+## Cost
+
+Every model here is an open, ungated checkpoint run **locally** — there is **no
+per-token or per-API-call dollar cost**. The real currency this benchmark trades
+in is **time, memory, and disk** (see the [Results](#results) table).
+AI-assisted engineering on this repo was plan-metered (subscription) with no
+per-token charge captured.
+
+The full accounting — engineering AI usage, the measured runtime cost ledger, a
+hypothetical list-price estimate, and a cost-calculation template — lives in
+**[`docs/AI_USAGE_AND_COST.md`](docs/AI_USAGE_AND_COST.md)**.
+
+## Quick start
+
+```sh
+uv sync --all-extras
+cp .env-example .env   # add your HF_TOKEN
+```
+
+```sh
+uv run python src/main.py --validate     # dry-run: config, providers, HF cache — no inference
+uv run python src/main.py --run-all      # full three-mode benchmark
+uv run python src/main.py --single --mode airllm --model small
+```
+
+Results are written to `results/metrics.json`; charts and the comparison table
+land in `assets/`. The analysis is in
+[`notebooks/analysis.ipynb`](notebooks/analysis.ipynb).
+
+## Providers / backends
+
+Both GPU and CPU baseline runners are provider-configurable via
+`config/experiment.json`; AirLLM is a builtin runner (no provider):
+
+| Backend | Status | Notes |
+| --- | --- | --- |
+| **Transformers** | ✅ Wired (default) | HuggingFace `AutoModel*`; GPU and CPU targets; bitsandbytes 4-bit |
+| **AirLLM** | ✅ Builtin runner | Layer-by-layer paged inference for the large-model scenario |
+| **llama.cpp** | 🟡 Implemented, unwired | `LlamaCppProvider` is complete + 100% unit-tested but not yet registered in `create_provider()` (see [`docs/INCONSISTENCIES.md`](docs/INCONSISTENCIES.md) #4) |
 
 ## Quality gates
 
@@ -103,8 +201,8 @@ uv run python scripts/readme_sync.py check
 
 ## Attribution
 
-This project builds on and benchmarks the following open-source work; it
-does not modify or redistribute their weights or code:
+This project builds on and benchmarks the following open-source work; it does not
+modify or redistribute their weights or code:
 
 - **[AirLLM](https://github.com/lyogavin/airllm)** (Yang, 2023) — the paged
   inference technique under test.
@@ -122,8 +220,22 @@ does not modify or redistribute their weights or code:
 
 ## License
 
-[MIT](LICENSE) — this project's own code. Third-party models and libraries
-listed under Attribution above retain their own licenses.
+[MIT](LICENSE) — this project's own code. Third-party models and libraries listed
+under Attribution above retain their own licenses.
+
+## Status & roadmap
+
+All 50 tasks across 9 phases are complete ([`docs/TODO.md`](docs/TODO.md)
+§Summary). Deferred, non-blocking follow-ups are tracked in
+[`docs/INCONSISTENCIES.md`](docs/INCONSISTENCIES.md):
+
+- **#1** — purge remaining stale Ollama references from architecture docs.
+- **#3** — optional typed SDK return dataclasses (`BenchmarkResult` /
+  `VisualizationResult`).
+- **#4** — wire `LlamaCppProvider` into `create_provider()` / config selection.
+- A full parameter sweep (prompts × quantization × `max_new_tokens`) is designed
+  in [`notebooks/analysis.ipynb`](notebooks/analysis.ipynb) §5 but not executed —
+  cost-prohibitive on this hardware.
 
 ## Repository facts
 

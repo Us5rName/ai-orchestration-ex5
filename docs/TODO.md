@@ -9,6 +9,7 @@
 > **TDD Rule:** Tests are written alongside each phase, not after. Each task that produces code includes its tests. Global coverage gate at the end.
 > **Dependencies:** `Depends` column lists tasks that must complete first.
 > **Integration:** Staged bottom-up. Each phase integrates with the previous before moving on. See [Integration Plan](#integration-plan).
+> **AI usage & cost:** AI-assisted engineering and the benchmark's measured (local, $0-API) cost are recorded in [`AI_USAGE_AND_COST.md`](AI_USAGE_AND_COST.md).
 
 ---
 
