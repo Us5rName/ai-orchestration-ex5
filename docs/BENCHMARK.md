@@ -109,7 +109,7 @@ A benchmark run is considered **high-quality** when all of the following hold:
 | Criterion | Requirement |
 |-----------|-------------|
 | **Coverage** | Every `(model, mode, prompt)` combination produced a record |
-| **Field completeness** | All `MetricsRecord` fields populated (non-empty strings, non-null numbers, including `peak_vram_mb`) |
+| **Field completeness** | All `MetricsRecord` fields populated (non-empty strings, non-null numbers) |
 | Status recorded | Every record has a non-empty `status` (`success`, `oom`, or `timeout`) |
 | Error context | Every failed record includes a descriptive `error` message |
 
