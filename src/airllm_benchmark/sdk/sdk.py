@@ -100,6 +100,7 @@ class BenchmarkSDK:
         # AirLLM is builtin — no external provider needed.
         if mode == "airllm":
             from airllm_benchmark.sdk.airllm_runner import AirllmRunner
+
             airllm_runner = AirllmRunner()
             return airllm_runner.run(
                 provider=None,
@@ -138,13 +139,10 @@ class BenchmarkSDK:
         return _helpers.render_visualization(self._visualizer, records, output_dir)
 
     def validate(self) -> ValidationResult:
-        """Validate config, providers, and model cache. Runs no inference.
-
-        Returns:
-            ValidationResult with config/provider/cache check outcomes.
-        """
+        """Validate config, providers, and model cache. Runs no inference."""
         return run_validation(self._config_dir)
 
     def generate_report(self, results_path: str, output_dir: str | None = None) -> ReportResult:
         """Generate the full §5 report (table, CSV, charts, narrative). Per INTERFACES.md §11."""
-        return _report_helpers.generate_report(results_path, output_dir)
+        cfg_dir = str(self._config_dir) if self._config_dir else None
+        return _report_helpers.generate_report(results_path, output_dir, config_dir=cfg_dir)

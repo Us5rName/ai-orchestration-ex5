@@ -512,12 +512,19 @@ class ReportResult:
 class ReportBuilder:
     """Builds the full §5 reporting-layer output from metrics records."""
 
-    def build(self, records: list[MetricsRecord], output_dir: str = "assets") -> ReportResult:
+    def build(
+        self,
+        records: list[MetricsRecord],
+        output_dir: str = "assets",
+        config_dir: Path | None = None,
+    ) -> ReportResult:
         """Build the full report: table, CSV, eight charts, narrative.
 
         Args:
             records: Metrics records to report on (from ResultWriter.load()).
             output_dir: Directory for CSV + chart PNG output.
+            config_dir: Optional config directory override so tier resolution
+                uses the same experiment config that produced the metrics.
 
         Returns:
             ReportResult with all generated artifacts.
