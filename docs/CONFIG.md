@@ -39,9 +39,9 @@ Each inference run produces one record appended to the JSON array.
 ```json
 {
   "models": {
-    "small": { "id": "meta-llama/Llama-3.2-1B", "tier": "small" },
-    "medium": { "id": "Qwen/Qwen2.5-7B-Instruct", "tier": "medium" },
-    "large": { "id": "Qwen/Qwen2.5-72B-Instruct", "tier": "large" }
+    "small": { "id": "Qwen/Qwen2.5-0.5B-Instruct", "tier": "small" },
+    "medium": { "id": "Qwen/Qwen2.5-3B-Instruct", "tier": "medium" },
+    "large": { "id": "Qwen/Qwen2.5-32B-Instruct", "tier": "large" }
   },
   "prompts": {
     "P1": "What is the capital of the United States?",
@@ -50,14 +50,15 @@ Each inference run produces one record appended to the JSON array.
   },
   "max_new_tokens": 32,
   "quantization": "4bit",
-  "gpu_provider": "ollama",
+  "gpu_provider": "transformers",
   "cpu_baseline_provider": "transformers",
   "provider_config": {
-    "ollama": { "base_url": "http://localhost:11434" },
-    "transformers": { "device": "cpu" }
+    "transformers": { "device": "cuda" }
   }
 }
 ```
+
+> All models are open, ungated Qwen checkpoints — no HuggingFace token or gated-term acceptance is required. `gpu_provider`/`cpu_baseline_provider` are both `"transformers"` (Ollama was removed — see `docs/INCONSISTENCIES.md` #1). The `"large"` tier must exceed available system RAM unquantized to demonstrate the CPU-raw-baseline failure/slowness scenario (see `docs/PRD.md` §7.1's Selection Rule).
 
 ### Fields
 

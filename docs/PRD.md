@@ -264,13 +264,13 @@ Multiple providers can perform local inference. The chosen provider is configura
 
 ### 7.1 Model Selection Strategy
 
-| Tier          | Model Example                    | Rationale                              |
+| Tier          | Model (as configured)             | Rationale                              |
 | ------------- | -------------------------------- | -------------------------------------- |
-| **Small**     | `meta-llama/Llama-3.2-1B`        | Fits GPU easily; fast baseline         |
-| **Medium**    | `Qwen/Qwen2.5-7B-Instruct`       | Fits GPU; good AirLLM comparison target|
-| **Large**     | `Qwen/Qwen2.5-72B-Instruct`      | Exceeds VRAM; demonstrates AirLLM value|
+| **Small**     | `Qwen/Qwen2.5-0.5B-Instruct`     | Open, ungated; fits GPU easily; fast baseline |
+| **Medium**    | `Qwen/Qwen2.5-3B-Instruct`       | Fits GPU; good AirLLM comparison target|
+| **Large**     | `Qwen/Qwen2.5-32B-Instruct`      | Exceeds available RAM unquantized (~65.5GB fp16); demonstrates AirLLM value |
 
-> **Selection Rule:** Choose models based on actual available VRAM. The "Large" model must be **> 2× available VRAM** to guarantee a meaningful failure baseline.
+> **Selection Rule:** Choose models based on actual available memory for the scenario being tested — VRAM for the GPU baseline, **system RAM** for the CPU-raw baseline (this is the constraint that actually matters for scenario 2; an earlier config used a 7B "large" tier which fit comfortably in RAM even unquantized and would not have demonstrated OOM/slowness at all). The "Large" model must be **> 2× available memory** to guarantee a meaningful failure baseline. Originally illustrated with `meta-llama/Llama-3.2-1B`/`Qwen2.5-72B-Instruct`; switched to all-open Qwen models so no HuggingFace gated-term acceptance is required (see `docs/INCONSISTENCIES.md` #1), and to a 32B "large" tier sized to this benchmark hardware's ~62GB RAM rather than a fixed 72B (which would need ~144GB unquantized — unnecessarily large for the same qualitative demonstration).
 
 ### 7.2 Test Prompts
 

@@ -1,9 +1,33 @@
 # AirLLM Inference Benchmark
 
-Reproducible benchmark comparing three memory scenarios for local LLM
-inference — a small model on GPU, an oversized model on raw CPU (expected
-to fail), and the same oversized model via **AirLLM** paged inference
-(expected to succeed with a latency trade-off). See [`docs/PRD.md`](docs/PRD.md).
+[![CI](https://github.com/Us5rName/ai-orchestration-ex5/actions/workflows/ci.yml/badge.svg)](https://github.com/Us5rName/ai-orchestration-ex5/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.12%2B-blue)
+![uv](https://img.shields.io/badge/package%20manager-uv-de5fe9)
+![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)
+![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen)
+
+`LLM inference` · `benchmarking` · `AirLLM` · `GPU vs CPU` · `quantization` · `HuggingFace Transformers` · `llama.cpp`
+
+Large language models demand more GPU/CPU memory than most machines have to
+spare. **[AirLLM](https://github.com/lyogavin/airllm)** trades latency for
+accessibility — it runs models far larger than available memory via
+layer-by-layer paged inference, streaming weights from disk instead of
+holding the whole model in RAM/VRAM at once.
+
+This repo is a reproducible benchmark that proves and quantifies that
+trade-off on real hardware, comparing three memory scenarios head-to-head:
+
+| Scenario | What it shows | Expected outcome |
+| --- | --- | --- |
+| **Small model on GPU** | Fast baseline — model comfortably fits in VRAM | Low latency, low memory |
+| **Large model on raw CPU** | No paging, no compression — model exceeds available RAM | OOM or extreme slowness |
+| **Same large model via AirLLM** | Paged + quantized inference | Succeeds, at a steep latency cost |
+
+The key variable is whether the model **fits in available memory** — not
+which inference library is used. Providers (Transformers, llama.cpp) are
+swappable and support both GPU and CPU targets; see [`docs/PRD.md`](docs/PRD.md)
+for the full requirements and [`docs/PLAN.md`](docs/PLAN.md) for the
+architecture.
 
 ## Install
 
@@ -15,9 +39,9 @@ cp .env-example .env   # add your HF_TOKEN
 ## Usage
 
 ```sh
-uv run python main.py --validate     # dry-run: config, providers, HF cache — no inference
-uv run python main.py --run-all      # full three-mode benchmark
-uv run python main.py --single --mode airllm --model small
+uv run python src/main.py --validate     # dry-run: config, providers, HF cache — no inference
+uv run python src/main.py --run-all      # full three-mode benchmark
+uv run python src/main.py --single --mode airllm --model small
 ```
 
 Results are written to `results/metrics.json`; charts and the comparison
@@ -29,6 +53,34 @@ Tunable values live in `config/experiment.json` (models, prompts,
 providers, quantization), `config/hardware.json` (the documented
 benchmark machine), and `config/rate_limits.json` (external-call rate
 limits enforced by the API Gatekeeper). See [`docs/CONFIG.md`](docs/CONFIG.md).
+
+## Cost & resource profile
+
+Every model here is an open, ungated checkpoint run **locally** — there is
+no per-token or per-API-call dollar cost. The real currency this benchmark
+trades in is **time, memory, and disk**. Numbers below are actual measured
+results from this repo's own hardware (see `config/hardware.json`), not
+estimates:
+
+| Scenario | Model | Load/TTFT | Total runtime | Throughput | Peak RAM | Peak VRAM | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| GPU baseline | Qwen2.5-0.5B (unquantized) | 0.16s / 3.01s | 3.80s | 40.1 tok/s | 810 MB | 966 MB | ✅ success |
+| AirLLM (paged, 4-bit) | Qwen2.5-32B (~65.5GB unquantized) | 604.31s | 1069.60s | 0.1 tok/s | 6.9 GB | 1.9 GB | ✅ success |
+| CPU baseline (raw, unquantized) | Qwen2.5-32B | — (never finished loading) | 900s (killed) | — | 38.6 GB (climbing) | n/a | ⏱️ timeout |
+
+![Latency comparison](assets/phase8/latency_chart.png)
+![Memory comparison](assets/phase8/memory_chart.png)
+
+The AirLLM row is the whole point: a model that needs **~65.5GB unquantized**
+runs in **~6.9GB of RAM** via paging — at the cost of ~18 minutes to answer
+one short prompt. The CPU-baseline row (same model, no paging, no
+quantization) was run under an external memory/timeout watchdog rather than
+letting it exhaust this machine's RAM uncontrolled — after 15 minutes it had
+consumed **38.6GB and counting** (this sandbox has 0 swap, so the process was
+stuck in an uninterruptible disk-I/O wait, not making meaningful progress)
+and was killed. That timeout **is** the "OOM or extreme slowness" result the
+raw-CPU scenario is supposed to produce (see `docs/TODO.md` task 8.3 and
+[`docs/PRD.md`](docs/PRD.md) FR-03).
 
 ## Quality gates
 
