@@ -1737,4 +1737,60 @@ Status:         success
 
 ---
 
+## Entry 56 — hw5-bundle Quality Gates + GpuRunner Device Bug + API Gatekeeper
+
+**Prompt:** Gap analysis against PRD/PLAN/TODO surfaced several concrete issues: an instructor-provided `hw5-bundle.zip` scaffold had not been integrated, a real device-handling bug in `GpuRunner`, and CLAUDE.md's mandatory API Gatekeeper had never been planned or built.
+
+**Context:** `hw5-bundle.zip` contained 9 quality-gate scripts, a keyless CI workflow, matching pre-commit hooks, and a starter `README.md` with a `readme_sync.py`-generated facts region. Tracing why 6 PoC tests were failing found: 5 were legitimately CUDA-only tests missing a `skipif` guard, but 1 (`test_gpu_runner_cpu_fallback`) exposed a real bug — `sdk/gpu_runner.py` hardcoded `DEFAULT_DEVICE = "cuda"` and always overrode the provider's configured device.
+
+**Decisions:**
+- Integrated the hw5-bundle as-is (`scripts/`, `.github/workflows/ci.yml`, `.pre-commit-config.yaml`), adopted its starter README (closing TODO 9.5, previously empty), and split two files that newly failed the bundle's 150-line gate (`sdk.py` → extracted `render_visualization` into `sdk_helpers.py`; `test_cli.py` → split `--run-all` tests into `test_cli_run_all.py`).
+- Fixed `GpuRunner` to pass `None` (not a hardcoded device) to `provider.load_model()`, so `TransformersProvider`'s own fallback (`target = device or self._device`) applies — respects the provider's constructed device instead of always forcing CUDA. Added the missing `skipif(not cuda_available)` guards to the 5 real-GPU/AirLLM PoC tests.
+- Implemented `shared/gatekeeper.py` (`call_with_rate_limit`, `RateLimiter`) + `config/rate_limits.json`, wired into the two real HF Hub call sites (`transformers_helpers.load_tokenizer_and_model`, `airllm_loader.load_model`). Documented in `CONFIG.md` §5, `INTERFACES.md` §9, `PLAN.md` (C3 diagram, C4 structure, ADR-006).
+- Corrected `config/hardware.json` (was fabricated placeholder data) to this sandbox's real specs, fixed `TODO.md`'s self-contradictory summary table (was `0/49` despite ~19 tasks marked Done), and corrected `PRD.md`'s stale Ollama-specific acceptance criterion/default.
+
+**Follow-up fix:** CI failed once opened as a PR — `test_cpu_runner_benchmark_poc.py` / `test_gpu_runner_benchmark_poc.py` hardcoded the gated `meta-llama/Llama-3.2-1B` model; GitHub Actions runners have no `HF_TOKEN`. Switched `POC_MODEL` to the already-open `Qwen/Qwen2.5-0.5B-Instruct` (matches `config/experiment.json`'s "small" tier).
+
+**Validation:** All 10 gate scripts pass; `pytest --cov` → 284 passed, 9 skipped, 0 failed, 89.6% coverage. Merged via PR #2.
+
+---
+
+## Entry 57 — Phase 7: Pre-Benchmark Preparation (7.1, 7.2, 7.4)
+
+**Prompt:** Finish Phase 7 (gated model access, pre-download models, config+provider validation POC) as an independent worktree-agent pass, in parallel with Phase 3 (llama.cpp) and Phase 9.6 (integration test).
+
+**Decisions:**
+- **7.1** resolved as moot rather than rubber-stamped Done: `config/experiment.json` only ever referenced open, ungated Qwen checkpoints — confirmed no HF gated-term acceptance is actually needed for this benchmark's real config (PRD's own model-selection table still names `meta-llama/Llama-3.2-1B` as an illustrative example, which is what caused the CI 401 in Entry 56's follow-up fix). No programmatic term-acceptance was attempted — that requires a human on huggingface.co.
+- **7.2**: verified all three configured tiers cache correctly via a real `load_model → generate → unload` pass through `TransformersProvider` on CPU.
+- **7.4**: added `sdk/sdk_validation.py` (`ValidationResult`, `run_validation()`) + `shared/cache_check.py` (`model_cache_status()` via `huggingface_hub.scan_cache_dir()`), reusing existing `validate_config()`/`validate_hardware()` rather than duplicating. Wired into `BenchmarkSDK.validate()` and the CLI as `--validate`. Instantiates each configured provider with **no** `load_model()`/`generate()` call, so validation runs no inference.
+
+**Changes:** `sdk/sdk.py`, `sdk/sdk_validation.py` (new), `shared/cache_check.py` (new), `cli_printers.py`, `src/main.py`, plus unit tests for all three. `docs/TODO.md` Phase 7 → 4/4 Done.
+
+**Validation:** All gates pass; `pytest --cov` → 304 passed, 9 skipped, 90.59% coverage. Manually verified `uv run python src/main.py --validate` reports PASSED with all three tiers cached. Merged (with Phase 3 and Phase 9.6) via PR #3.
+
+---
+
+## Entry 58 — Phase 8: Benchmark Execution
+
+**Prompt:** Run the actual three-scenario benchmark (GPU baseline, CPU-raw baseline, AirLLM) now that Phase 7 has landed.
+
+**Blocker found and fixed:** `torch==2.12.1` (pinned in the Entry-prior dependency fix, PR #1) only ships `cu130` wheels, but this sandbox's NVIDIA driver (550.142) only supports up to CUDA 12.4 — `torch.cuda.is_available()` was `False` the entire time, silently blocking every GPU-dependent test and both the GPU-baseline and AirLLM benchmark scenarios (both need real CUDA compute). Fixed by sourcing `torch` from PyTorch's own `cu124` wheel index (`download.pytorch.org/whl/cu124`) and re-pinning `2.6.0+cu124` — the newest version with a `cu124` build. Resolved cleanly with no downgrade to transformers/airllm/bitsandbytes. Verified: real GPU matmul runs, `torch.cuda.is_available()` is `True`, and the 8 previously CUDA-skipped tests now execute for real (330→338 passed, 9→1 skipped). One incidental test bug surfaced now that CUDA actually works: `test_torch_feature_pocs.py::test_reset_clears_peak` asserted peak VRAM is exactly `0.0` after `reset_peak_memory_stats()`, but that call rebases to *currently allocated* memory, not literal zero — a small ambient residual from earlier real-GPU tests in the same process made this fail. Loosened to a realistic threshold; this assumption had simply never been exercised on real hardware before.
+
+**Model-sizing gap found and fixed:** `config/experiment.json`'s `"large"` tier was `Qwen2.5-7B-Instruct` at `4bit` quantization — comfortably fits this sandbox's 62GB RAM even unquantized (~28GB), so the CPU-raw baseline would succeed normally instead of demonstrating PRD's scenario 2 (OOM/extreme slowness), undermining the entire GPU-vs-CPU-vs-AirLLM comparison. PRD §7.1 originally specified `Qwen2.5-72B-Instruct` for this exact reason ("must be >2× available memory to guarantee a meaningful failure baseline"), but the config had been scaled down at some point during earlier development. Re-pinned `"large"` to `Qwen2.5-32B-Instruct` (~65.5GB unquantized fp16, confirmed via `HfApi.model_info(files_metadata=True)`) — enough to exceed the ~58GB available RAM while remaining practical to download/run, without needing the full 72B (~144GB).
+
+**Results (real, not fabricated):**
+- GPU baseline (small, `Qwen2.5-0.5B-Instruct`, unquantized, CUDA): load 0.16s, TTFT 3.01s, total 3.80s, 40.1 tok/s, peak RAM 810MB, peak VRAM 966MB. Status: success.
+- AirLLM (large, `Qwen2.5-32B-Instruct`, 4-bit, paged): load/TTFT 604.31s (shard download + per-layer 4-bit conversion, 17 shards), total 1069.60s, throughput 0.1 tok/s, peak RAM 6933MB, peak VRAM 1924MB. Status: success — proves AirLLM's value proposition directly: a model that needs ~65GB unquantized fits in ~6.9GB RAM via paging, at a steep latency cost.
+- CPU baseline (large, `Qwen2.5-32B-Instruct`, unquantized, raw): run with an external memory-watchdog subprocess (this sandbox has 0 swap, so a real OOM would hit the kernel OOM-killer directly rather than degrading gracefully) — proactively kills the child if RSS exceeds ~52GB or wall-clock exceeds 15 minutes. **Result: timeout.** Killed at the 900s wall-clock limit with peak RAM 38.6GB — still climbing toward the ~65.5GB it would eventually need, never reached the generation phase. At kill time the process was in Linux `D` state (`filemap_fault` — an uninterruptible mmap page fault), which cannot receive SIGKILL until the blocking syscall completes; this genuinely stalled the watchdog's `communicate()` call for a short period until the page-in resolved. This is a real, non-fabricated demonstration of PRD's "OOM or extreme slowness" outcome for the raw-CPU scenario.
+
+**Watchdog process-tree bug found and worked around:** the watchdog's `subprocess.Popen(["uv", "run", "python", "-c", ...])` kills only the immediate `uv` wrapper process — `uv run` forks the actual Python worker as a **separate child**, not an exec-replacement, so `proc.kill()` orphaned the real worker (reparented to PID 1) instead of terminating it. Had to identify and `kill -9` the orphaned worker PID directly. Documented here rather than silently patched, since it's a real gotcha for anyone driving `uv run` subprocesses that need to be killed externally — prefer `uv run --no-sync python <script.py>` invoked via `exec` semantics, or spawn the venv's python directly (bypassing the `uv run` wrapper) next time.
+
+**Safety note:** the CPU-baseline watchdog (`run_cpu_baseline_watched.py`, not part of the shipped codebase — an operational script for driving this specific run) polls `psutil` RSS every 2s across the child's process tree and kills on either threshold, writing whatever real `MetricsRecord` results from the run (success, oom, or a manually-recorded timeout) via the same `ResultWriter`/`BenchmarkSDK` path as everything else.
+
+**Visualizations (task 8.6):** `Visualizer.generate_all()` / `generate_table()` run over all three real records (`results/metrics_phase8.json`) → `assets/phase8/latency_chart.png`, `assets/phase8/memory_chart.png`. The memory chart is the clearest evidence for the whole benchmark's thesis: CPU baseline (38.6GB, incomplete) vs. AirLLM (6.9GB, complete) vs. GPU baseline (810MB) — AirLLM uses ~5.6× less memory than the raw CPU baseline had already consumed without even finishing.
+
+**Also fixed while touching these docs:** `main.py` at the repo root was a vestigial `uv init` stub (`print("Hello from code!")`), unused anywhere, but `README.md`'s Usage section referenced `uv run python main.py ...` — pointing at the stub instead of the real CLI (`src/main.py`). Deleted the stub, fixed the README/TODO.md path references. Also synced `docs/CONFIG.md` §2's example config (was still `gpu_provider: "ollama"` and the gated `meta-llama/Llama-3.2-1B` — the exact model that caused Entry 56's CI failure) to match the real `config/experiment.json`, partially resolving `INCONSISTENCIES.md` #1 for this file.
+
+---
+
 ## Summary of Documents

@@ -2,7 +2,7 @@
   "models": {
     "small": { "id": "Qwen/Qwen2.5-0.5B-Instruct", "tier": "small" },
     "medium": { "id": "Qwen/Qwen2.5-3B-Instruct", "tier": "medium" },
-    "large": { "id": "Qwen/Qwen2.5-7B-Instruct", "tier": "large" }
+    "large": { "id": "Qwen/Qwen2.5-32B-Instruct", "tier": "large" }
   },
   "prompts": {
     "P1": "What is the capital of the United States?",
