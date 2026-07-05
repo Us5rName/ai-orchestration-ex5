@@ -5,6 +5,7 @@
 ![uv](https://img.shields.io/badge/package%20manager-uv-de5fe9)
 ![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)
 ![Coverage](https://img.shields.io/badge/coverage-91%25-brightgreen)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
 `LLM inference` · `benchmarking` · `AirLLM` · `GPU vs CPU` · `quantization` · `HuggingFace Transformers` · `llama.cpp`
 
@@ -118,6 +119,11 @@ does not modify or redistribute their weights or code:
 - **[llama.cpp](https://github.com/ggml-org/llama.cpp)** /
   [`llama-cpp-python`](https://github.com/abetlen/llama-cpp-python) — an
   additional supported inference provider (see `docs/INCONSISTENCIES.md` #4).
+
+## License
+
+[MIT](LICENSE) — this project's own code. Third-party models and libraries
+listed under Attribution above retain their own licenses.
 
 ## Repository facts
 
