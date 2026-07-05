@@ -88,15 +88,16 @@ transcripts in `~/.claude/projects/-root-ai-orchestration-ex5/` via
 **measured, verifiable tokens** from the `usage` block in each assistant
 message, spanning all sessions and sub-agents used to build this project.
 
-**Sessions (top-level + subagent):** 5  
-**Date range:** 2026-07-04T21:31:31Z → 2026-07-05T15:15:53Z
+**Sessions (top-level + subagent):** 16  
+**Date range:** 2026-07-04T21:31:31Z → 2026-07-05T23:43:02Z
 
 | Model | Messages | Input Tokens | Output Tokens | Cache Creation | Cache Read |
 |-------|----------|--------------|---------------|-----------|-----------|
-| claude-haiku-4-5-20251001 | 2 | 10 | 2,870 | 46,478 | 28,326 |
-| claude-opus-4-8 | 299 | 54,004 | 315,359 | 728,952 | 41,198,635 |
-| claude-sonnet-5 | 1,828 | 5,132 | 906,000 | 5,015,505 | 456,032,575 |
-| **TOTAL** | 2,129 | 59,146 | 1,224,229 | 5,790,935 | 497,259,536 |
+| claude-fable-5 | 32 | 15,205 | 28,703 | 255,842 | 1,098,093 |
+| claude-haiku-4-5-20251001 | 861 | 4,941 | 204,962 | 1,465,400 | 54,723,226 |
+| claude-opus-4-8 | 340 | 62,990 | 324,915 | 941,243 | 42,223,670 |
+| claude-sonnet-5 | 3,495 | 20,425 | 1,616,857 | 10,901,342 | 673,896,952 |
+| **TOTAL** | 4,728 | 103,561 | 2,175,437 | 13,563,827 | 771,941,941 |
 
 > **Billing model reminder.** All sessions ran under plan-metered (subscription)
 > billing, which carries no per-token charge. No dollar cost is computed or
