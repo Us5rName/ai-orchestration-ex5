@@ -44,10 +44,14 @@ There are **two independent cost stories** here, and they must not be conflated:
 
 ## Engineering AI Usage
 
-Because sessions were plan-metered and per-token usage was not exported, this
-record deliberately presents **no fabricated token table** (unlike a metered-API
-project would). The honest, verifiable evidence trail is the commit history and
-the prompt log.
+### Session Overview & Effort Distribution
+
+Because sessions were plan-metered and per-token usage was not exported at
+the time, the original token metrics were unavailable. However, Claude Code
+transcripts on this machine (stored as JSONL under `~/.claude/projects/...`)
+capture real usage in the `usage` block of each assistant message. The
+honest, verifiable evidence trail includes the commit history, the prompt
+log, and now the aggregated session token counts below.
 
 | Metric                       | Value | Source                                  |
 | ---------------------------- | ----- | --------------------------------------- |
@@ -56,7 +60,7 @@ the prompt log.
 | Commits with AI co-author trailer | 10 | `git log` (`Co-Authored-By: Claude Sonnet 5`) |
 | Delivery phases / tasks      | 9 / 50 | [`docs/TODO.md`](TODO.md) §Summary      |
 
-### Effort by phase
+#### Effort by phase
 
 Phase task counts from [`docs/TODO.md`](TODO.md) §Summary — a proxy for where the
 AI-assisted effort went:
@@ -74,8 +78,31 @@ AI-assisted effort went:
 | 9     | Analysis & documentation     | 7     |
 | **Total** |                          | **50** |
 
-> **Cost status: not calculated.** Claude Code transcripts record no monetary
-> cost (plan-metered); no dollar value is estimated without verified rates.
+---
+
+## Local Session Token Usage (this machine)
+
+The table below aggregates real token counts extracted from Claude Code JSONL
+transcripts in `~/.claude/projects/-root-ai-orchestration-ex5/` via
+[`scripts/aggregate_ai_usage.py`](../scripts/aggregate_ai_usage.py). These are
+**measured, verifiable tokens** from the `usage` block in each assistant
+message, spanning all sessions and sub-agents used to build this project.
+
+**Sessions (top-level + subagent):** 5  
+**Date range:** 2026-07-04T21:31:31Z → 2026-07-05T15:15:53Z
+
+| Model | Messages | Input Tokens | Output Tokens | Cache Creation | Cache Read |
+|-------|----------|--------------|---------------|-----------|-----------|
+| claude-haiku-4-5-20251001 | 2 | 10 | 2,870 | 46,478 | 28,326 |
+| claude-opus-4-8 | 299 | 54,004 | 315,359 | 728,952 | 41,198,635 |
+| claude-sonnet-5 | 1,828 | 5,132 | 906,000 | 5,015,505 | 456,032,575 |
+| **TOTAL** | 2,129 | 59,146 | 1,224,229 | 5,790,935 | 497,259,536 |
+
+> **Billing model reminder.** All sessions ran under plan-metered (subscription)
+> billing, which carries no per-token charge. No dollar cost is computed or
+> implied here — there is no verified per-token rate for this billing mode.
+> Token counts are reported as a measure of computational effort and for
+> audit/reproducibility purposes only.
 
 ---
 
@@ -169,6 +196,7 @@ Process improvements captured during development (from
 | Phase / task totals | [`docs/TODO.md`](TODO.md) §Summary |
 | Models, prompts, token budget | [`config/experiment.json`](../config/experiment.json) |
 | Benchmark hardware | [`config/hardware.json`](../config/hardware.json) |
+| Local session token usage | [`scripts/aggregate_ai_usage.py`](../scripts/aggregate_ai_usage.py) (scans `~/.claude/projects/...`) |
 
 No token or dollar figure in this document was invented; where a value could not
 be measured (per-session tokens), that is stated plainly rather than estimated.
