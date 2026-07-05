@@ -13,6 +13,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from airllm_benchmark.sdk.runner import RunnerManager
+from airllm_benchmark.sdk.sdk_summary import BenchmarkSummaryResult
 from airllm_benchmark.sdk.sdk_validation import ValidationResult, run_validation
 from airllm_benchmark.services.metrics import MetricsRecord
 from airllm_benchmark.services.result_writer import ResultWriter
@@ -39,10 +40,9 @@ class BenchmarkSDK:
         """Initialize SDK with optional config directory override."""
         self._config_dir = Path(config_dir) if config_dir else None
         self._runner_mgr = RunnerManager()
-        self._visualizer = Visualizer()
-    # ——— INTERFACES.md §1: run_benchmark ———
+        self._visualizer = Visualizer()  # ——— INTERFACES.md §1: run_benchmark ———
 
-    def run_benchmark(self) -> dict:
+    def run_benchmark(self) -> BenchmarkSummaryResult:
         """Execute full benchmark pipeline across all modes.
 
         Loads and validates config, clears prior results, runs every
@@ -50,7 +50,7 @@ class BenchmarkSDK:
         ResultWriter, then generates visualizations.
 
         Returns:
-            dict with keys: summary, chart_paths, table_text
+            BenchmarkSummaryResult with summary text, chart paths, and table.
         """
         config = load_experiment(self._config_dir)
         hw = load_hardware(self._config_dir)
@@ -67,11 +67,11 @@ class BenchmarkSDK:
         chart_paths = self._visualizer.generate_all(records, output_dir)
         table_text = self._visualizer.generate_table(records)
 
-        return {
-            "summary": _helpers.build_summary(records),
-            "chart_paths": chart_paths,
-            "table_text": table_text,
-        }
+        return BenchmarkSummaryResult(
+            summary=_helpers.build_summary(records),
+            chart_paths=chart_paths,
+            table_text=table_text,
+        )
     # ——— INTERFACES.md §1: run_single ———
 
     def run_single(

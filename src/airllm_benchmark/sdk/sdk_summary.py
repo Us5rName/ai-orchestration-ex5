@@ -11,10 +11,28 @@ benchmark orchestration.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from airllm_benchmark.services.metrics import MetricsRecord
+
+
+@dataclass(frozen=True)
+class BenchmarkSummaryResult:
+    """Benchmark execution summary with charts and comparison table.
+
+    Returned by BenchmarkSDK.run_benchmark(). Per INTERFACES.md §1.
+
+    Attributes:
+        summary: Human-readable summary text grouped by inference mode.
+        chart_paths: List of paths to generated chart PNG files.
+        table_text: Formatted comparison table as a string.
+    """
+
+    summary: str
+    chart_paths: list[str]
+    table_text: str
 
 
 def build_summary(records: Sequence[MetricsRecord]) -> str:

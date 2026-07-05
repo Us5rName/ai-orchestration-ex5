@@ -1,7 +1,6 @@
-"""Helper functions for BenchmarkSDK.
+"""Helper functions for BenchmarkSDK — delegates provider factory, orchestration.
 
-Delegates provider factory, benchmark orchestration, and visualization
-rendering so sdk.py stays within the 150-line limit.
+Extracted to keep sdk.py within the 150-line limit.
 Per PLAN.md C3 — SDK orchestrates runners, writer, and visualizer.
 """
 
@@ -9,6 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from airllm_benchmark.providers.llamacpp_provider import LlamaCppProvider
 from airllm_benchmark.providers.transformers_provider import TransformersProvider
 from airllm_benchmark.sdk.runner import RunnerManager
 from airllm_benchmark.sdk.sdk_summary import build_summary
@@ -76,7 +76,11 @@ def create_provider(
         device = cfg.get("device", "cpu")
         return TransformersProvider(device=device, quantization=quantization)
 
-    msg = f"Unsupported provider: '{name}'. Available: transformers"
+    if name == "llamacpp":
+        device = cfg.get("device", "cpu")
+        return LlamaCppProvider(device=device)
+
+    msg = f"Unsupported provider: '{name}'. Available: transformers, llamacpp"
     raise ValueError(msg)
 
 
@@ -143,6 +147,4 @@ def _resolve_provider(config: ExperimentConfig, mode: str) -> str:
         return config.cpu_baseline_provider
     if mode == "airllm":
         return "airllm"
-
-    msg = f"No provider mapping for mode: '{mode}'"
-    raise ValueError(msg)
+    raise ValueError(f"No provider mapping for mode: '{mode}'")

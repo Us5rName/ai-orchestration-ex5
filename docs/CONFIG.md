@@ -70,7 +70,29 @@ Each inference run produces one record appended to the JSON array.
 | `quantization`          | string | Quantization level for AirLLM (`"4bit"` / `"8bit"`) |
 | `gpu_provider`          | string | Provider for GPU baseline (e.g., `"transformers"`) |
 | `cpu_baseline_provider` | string | Provider for CPU baseline (e.g., `"transformers"`) |
-| `provider_config`       | object | Per-provider settings                              |
+| `provider_config`       | object | Per-provider settings (see below)                  |
+
+### Provider Configuration
+
+The `provider_config` object contains settings for each available provider.
+
+**Transformers provider:**
+```json
+"transformers": {
+  "device": "cuda"
+}
+```
+- `device` (string): Target device — `"cuda"` for GPU, `"cpu"` for CPU.
+
+**llama.cpp provider (optional):**
+```json
+"llamacpp": {
+  "device": "cuda"
+}
+```
+- `device` (string): Target device — `"cuda"` for GPU (uses `n_gpu_layers` internally), `"cpu"` for CPU-only.
+
+To select a provider for GPU or CPU baseline, set `gpu_provider` or `cpu_baseline_provider` to its name (e.g., `"llamacpp"`). Model identifiers can be local paths (`"/path/to/model.gguf"`) or HuggingFace Hub identifiers in the form `"repo_id::filename"`.
 
 ---
 

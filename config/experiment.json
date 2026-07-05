@@ -14,6 +14,7 @@
   "gpu_provider": "transformers",
   "cpu_baseline_provider": "transformers",
   "provider_config": {
-    "transformers": { "device": "cuda" }
+    "transformers": { "device": "cuda" },
+    "llamacpp": { "device": "cuda" }
   }
 }

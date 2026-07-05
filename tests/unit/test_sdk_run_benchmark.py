@@ -44,10 +44,10 @@ def _record() -> MetricsRecord:
 class TestRunBenchmark:
     """BenchmarkSDK.run_benchmark() tests."""
 
-    def test_returns_dict_with_keys(
+    def test_returns_dataclass_with_fields(
         self, mock_config: MagicMock, mock_hw: MagicMock, _record: MetricsRecord
     ) -> None:
-        """run_benchmark returns dict with summary, chart_paths, table_text."""
+        """run_benchmark returns BenchmarkSummaryResult with summary, chart_paths, table_text."""
         with (
             patch("airllm_benchmark.sdk.sdk.load_experiment", return_value=mock_config),
             patch("airllm_benchmark.sdk.sdk.load_hardware", return_value=mock_hw),
@@ -65,9 +65,9 @@ class TestRunBenchmark:
 
             result = sdk.run_benchmark()
 
-            assert "summary" in result
-            assert "chart_paths" in result
-            assert "table_text" in result
+            assert hasattr(result, "summary")
+            assert hasattr(result, "chart_paths")
+            assert hasattr(result, "table_text")
 
     def test_writer_cleared_before_run(self, mock_config: MagicMock, mock_hw: MagicMock) -> None:
         """ResultWriter.clear() is called before benchmark runs."""

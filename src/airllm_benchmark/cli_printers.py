@@ -55,22 +55,22 @@ def print_result(record: MetricsRecord) -> None:
     print(sep)
 
 
-def print_run_all_result(result: dict) -> None:
+def print_run_all_result(result) -> None:  # type: ignore[no-untyped-def]
     """Print formatted benchmark summary from sdk.run_benchmark().
 
     Args:
-        result: Dict with keys summary, chart_paths, table_text
+        result: BenchmarkSummaryResult with summary, chart_paths, table_text
             (per INTERFACES.md §1).
     """
     sep = "=" * 60
     print(sep)
     print("  Benchmark Complete")
     print(sep)
-    print(result["summary"])
+    print(result.summary)
     print()
-    print(result["table_text"])
-    if result["chart_paths"]:
-        paths = ", ".join(result["chart_paths"])
+    print(result.table_text)
+    if result.chart_paths:
+        paths = ", ".join(result.chart_paths)
         print(f"\nCharts: {paths}")
     print(sep)
 

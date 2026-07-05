@@ -16,3 +16,6 @@ wheels/
 .coverage
 htmlcov/
 huggingface transformers main docs-source_en
+
+# Backup archives (for rsync transfers)
+*-complete-*.zip

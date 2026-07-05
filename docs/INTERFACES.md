@@ -2,9 +2,9 @@
 
 | Metadata      | Value                                  |
 | ------------- | -------------------------------------- |
-| **Version**   | 1.04                                   |
+| **Version**   | 1.05                                   |
 | **Based on**  | `docs/PRD.md` v1.00, `docs/PLAN.md` v1.00 |
-| **Changes**   | Added `BenchmarkSDK.validate()` + `ValidationResult` (§1, §10) per task 7.4 |
+| **Changes**   | Added `BenchmarkSDK.validate()` + `ValidationResult` (§1, §10) per task 7.4; `BenchmarkSummaryResult` (§1) replacing bare dict per INCONSISTENCIES #2 |
 
 ---
 
@@ -16,11 +16,11 @@ Single entry point for all benchmark operations. CLI and any external consumer d
 class BenchmarkSDK:
     """Single entry point for all benchmark operations."""
 
-    def run_benchmark(self) -> dict:
+    def run_benchmark(self) -> BenchmarkSummaryResult:
         """Execute full benchmark pipeline across all modes.
 
         Returns:
-            dict with keys: summary, chart_paths, table_text
+            BenchmarkSummaryResult with summary text, chart paths, and table.
         """
 
     def run_single(self, model_id: str, mode: str, prompt: str,
@@ -65,6 +65,16 @@ class BenchmarkSDK:
             ValidationResult — see §10.
         """
 ```
+
+### 1.1 BenchmarkSummaryResult
+
+Dataclass returned by `BenchmarkSDK.run_benchmark()`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `summary` | str | Human-readable summary text grouped by inference mode |
+| `chart_paths` | list[str] | Paths to generated chart PNG files |
+| `table_text` | str | Formatted comparison table as a string |
 
 ---
 

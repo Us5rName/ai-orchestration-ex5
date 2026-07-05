@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
+from airllm_benchmark.sdk.sdk_summary import BenchmarkSummaryResult
 from src.main import parse_args, run_all
 
 
@@ -43,11 +44,11 @@ class TestRunAll:
     def test_delegates_to_sdk_run_benchmark(self, mock_sdk_cls) -> None:
         """run_all calls SDK.run_benchmark with correct config_dir."""
         mock_sdk = MagicMock()
-        mock_sdk.run_benchmark.return_value = {
-            "summary": "Benchmark Summary — 9 runs total",
-            "chart_paths": ["assets/latency_chart.png"],
-            "table_text": "| Mode | Runtime |",
-        }
+        mock_sdk.run_benchmark.return_value = BenchmarkSummaryResult(
+            summary="Benchmark Summary — 9 runs total",
+            chart_paths=["assets/latency_chart.png"],
+            table_text="| Mode | Runtime |",
+        )
         mock_sdk_cls.return_value = mock_sdk
 
         args = parse_args(["--run-all"])
@@ -59,11 +60,11 @@ class TestRunAll:
     def test_prints_summary(self, mock_sdk_cls, capsys) -> None:
         """run_all prints formatted benchmark summary."""
         mock_sdk = MagicMock()
-        mock_sdk.run_benchmark.return_value = {
-            "summary": "Benchmark Summary — 9 runs total",
-            "chart_paths": ["assets/latency_chart.png", "assets/memory_chart.png"],
-            "table_text": "| Mode | Runtime |\n|------|---------|",
-        }
+        mock_sdk.run_benchmark.return_value = BenchmarkSummaryResult(
+            summary="Benchmark Summary — 9 runs total",
+            chart_paths=["assets/latency_chart.png", "assets/memory_chart.png"],
+            table_text="| Mode | Runtime |\n|------|---------|",
+        )
         mock_sdk_cls.return_value = mock_sdk
 
         args = parse_args(["--run-all"])
@@ -77,11 +78,11 @@ class TestRunAll:
     def test_prints_table(self, mock_sdk_cls, capsys) -> None:
         """run_all prints comparison table."""
         mock_sdk = MagicMock()
-        mock_sdk.run_benchmark.return_value = {
-            "summary": "Benchmark Summary",
-            "chart_paths": [],
-            "table_text": "| gpu_provider | 1.50s |",
-        }
+        mock_sdk.run_benchmark.return_value = BenchmarkSummaryResult(
+            summary="Benchmark Summary",
+            chart_paths=[],
+            table_text="| gpu_provider | 1.50s |",
+        )
         mock_sdk_cls.return_value = mock_sdk
 
         args = parse_args(["--run-all"])
