@@ -213,7 +213,7 @@ When an integration checkpoint fails:
 
 | #  | Task | Depends | Status | Definition of Done |
 |----|------|---------|--------|-------------------|
-| 9.1 | Create `notebooks/analysis.ipynb` — Jupyter notebook with results analysis | 8.6 | Not Started | Loads `metrics.json`; generates charts; includes LaTeX formulas; academic references |
+| 9.1 | Create `notebooks/analysis.ipynb` — Jupyter notebook with results analysis | 8.6 | ✅ Done | Loads `results/metrics_phase8.json` into a `pandas.DataFrame` (no hardcoded numbers — every figure/table is computed from the JSON, including the unquantized-model-size figure parsed from the CPU-baseline `error` string via regex); reuses `services/visualizer.py::Visualizer`/`MetricsRecord` for the comparison table; embeds the existing `assets/phase8/*.png` charts plus two additional inline matplotlib charts (log-log latency-vs-memory scatter, time/memory cost bars); LaTeX formulas for throughput, AirLLM memory-reduction ratio, and a latency-memory efficiency score; a cost & resource analysis section (time/memory, no dollar cost); a sensitivity-analysis/limitations section documenting the single-run-per-scenario constraint and a future sweep design over `config/experiment.json`'s `P1`/`P2`/`P3` prompts, quantization levels, and `max_new_tokens`; academic references (AirLLM repo, HF Transformers, QLoRA/NF4 arXiv:2305.14314 and LLM.int8() arXiv:2208.07339 — the actual `bitsandbytes` mechanisms behind `providers/transformers_helpers.py::build_quant_config`, not a generic placeholder — and the Qwen2.5 technical report arXiv:2412.15115). Executes clean top-to-bottom via `uv run jupyter nbconvert --to notebook --execute --inplace notebooks/analysis.ipynb` (jupyter/nbconvert/ipykernel added as `dev` extras in `pyproject.toml`). |
 | 9.2 | Verify global test coverage ≥ 85% | 2.4, 3.6, 4.2, 4.5, 5.8 | ✅ Done | `uv run pytest --cov` passes (89.6%); coverage report generated; gated in CI |
 | 9.3 | Run `ruff check` — zero violations | 6.2 | ✅ Done | `uv run ruff check` returns 0 (`src tests scripts`); gated in CI |
 | 9.4 | Verify no file exceeds 150 lines | 6.2 | ✅ Done | All `.py` files ≤ 150 lines; gated in CI via `scripts/check_line_cap.py` |
@@ -235,5 +235,5 @@ When an integration checkpoint fails:
 | 6 — CLI | 2 | 2/2 Done |
 | 7 — Pre-Benchmark | 4 | 4/4 Done (7.1 resolved as N/A — see task note) |
 | 8 — Benchmark Execution | 6 | 6/6 Done |
-| 9 — Analysis & Documentation | 7 | 5/7 Done |
-| **Total** | **50** | **48/50 Done** |
+| 9 — Analysis & Documentation | 7 | 6/7 Done |
+| **Total** | **50** | **49/50 Done** |
