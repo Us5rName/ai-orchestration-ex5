@@ -125,6 +125,7 @@ Actual measured results from this repo's own hardware (see
 | Scenario | Model | Load/TTFT | Total runtime | Throughput | Peak RAM | Peak VRAM | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | GPU baseline | Qwen2.5-0.5B (unquantized) | 0.16s / 3.01s | 3.80s | 40.1 tok/s | 810 MB | 966 MB | ✅ success |
+| GPU baseline | Qwen2.5-3B (unquantized) | ~0.3s / ~3s | ~5.47s (avg) | 5.8 tok/s (avg) | 4.6 GB (avg) | ~3.2 GB | ✅ success |
 | AirLLM (paged, 4-bit) | Qwen2.5-32B (~65.5GB unquantized) | 604.31s | 1069.60s | 0.1 tok/s | 6.9 GB | 1.9 GB | ✅ success |
 | CPU baseline (raw, unquantized) | Qwen2.5-32B | — (never finished loading) | 900s (killed) | — | 38.6 GB (climbing) | n/a | ⏱️ timeout |
 
@@ -251,10 +252,11 @@ All 50 tasks across 9 phases are complete ([`docs/TODO.md`](docs/TODO.md)
 
 - ✅ **#2** — typed SDK return dataclasses (`BenchmarkSummaryResult`).
 - ✅ **#3** — `LlamaCppProvider` wired into `create_provider()` (opt-in).
-- ✅ **Parameter sweep** — GPU-baseline sweep executed and integrated into
-  [`notebooks/analysis.ipynb`](notebooks/analysis.ipynb) §5:
-  P1/P2/P3 × {8, 32, 128} tokens (unquantized). Results in
-  [`results/metrics_sweep.json`](results/metrics_sweep.json).
+- ✅ **Parameter sweep** — GPU-baseline sweep executed (small model, P1/P2/P3 ×
+  {8, 32, 128} tokens, unquantized). Results in [`results/metrics_sweep.json`](results/metrics_sweep.json).
+- ✅ **Medium-tier GPU baseline** — 3B model GPU execution added (P1/P2/P3,
+  unquantized). Results in [`results/metrics_medium.json`](results/metrics_medium.json).
+  Charts in [`assets/medium/`](assets/medium/).
 
 ## Repository facts
 
