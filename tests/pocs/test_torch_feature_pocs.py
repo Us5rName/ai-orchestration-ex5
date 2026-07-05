@@ -48,8 +48,12 @@ def test_reset_clears_peak() -> None:
     reset_peak_vram()
     peak = get_peak_vram_mb()
 
-    # After reset, allocating nothing should show 0 peak
-    assert peak == 0.0, f"Peak should be 0 after reset, got {peak:.2f}"
+    # reset_peak_memory_stats() rebases the peak to *currently allocated*
+    # memory, not literally 0 — ambient CUDA context/allocator overhead
+    # (cuBLAS/cuDNN handles, etc.) from earlier tests in the same process
+    # can leave a small residual. What matters is that reset dropped the
+    # peak well below the 50 MB we just allocated and freed.
+    assert peak < 10.0, f"Peak should drop near 0 after reset, got {peak:.2f}"
 
 
 def test_no_cuda_returns_zero() -> None:
