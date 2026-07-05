@@ -10,7 +10,7 @@ from __future__ import annotations
 import pytest
 
 from airllm_benchmark.services.metrics import MetricsRecord
-from airllm_benchmark.shared.config_models import ExperimentConfig
+from airllm_benchmark.shared.config_models import ExperimentConfig, HardwareConfig
 
 
 def _record(**overrides: object) -> MetricsRecord:
@@ -98,6 +98,21 @@ def empty_prompt_id_records() -> list[MetricsRecord]:
         _record(run_id="run_010", prompt_id=""),
         _record(run_id="run_011", mode="cpu_baseline", prompt_id=""),
     ]
+
+
+@pytest.fixture
+def report_hardware() -> HardwareConfig:
+    """Minimal HardwareConfig for chart reference lines (RAM/VRAM)."""
+    return HardwareConfig(
+        cpu="Test CPU",
+        gpu="Test GPU 24GB",
+        ram_gb=62,
+        vram_gb=24,
+        disk_free_gb=100,
+        os="Test OS",
+        documented_by="tester",
+        documented_at="2024-01-01T00:00:00+00:00",
+    )
 
 
 @pytest.fixture

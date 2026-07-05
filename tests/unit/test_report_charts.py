@@ -14,25 +14,16 @@ import tempfile
 from functools import partial
 from typing import TYPE_CHECKING
 
-from airllm_benchmark.services import report_charts, report_charts_extra, report_helpers
-from airllm_benchmark.shared.config_models import HardwareConfig
+from airllm_benchmark.services import (
+    report_charts,
+    report_charts_extra,
+    report_charts_scatter,
+    report_helpers,
+)
 
 if TYPE_CHECKING:
     from airllm_benchmark.services.metrics import MetricsRecord
-    from airllm_benchmark.shared.config_models import ExperimentConfig
-
-
-def _hardware() -> HardwareConfig:
-    return HardwareConfig(
-        cpu="Test CPU",
-        gpu="Test GPU 24GB",
-        ram_gb=62,
-        vram_gb=24,
-        disk_free_gb=100,
-        os="Test OS",
-        documented_by="tester",
-        documented_at="2024-01-01T00:00:00+00:00",
-    )
+    from airllm_benchmark.shared.config_models import ExperimentConfig, HardwareConfig
 
 
 class TestGroupedCharts:
@@ -55,11 +46,12 @@ class TestGroupedCharts:
         self,
         sample_report_records: list[MetricsRecord],
         report_experiment: ExperimentConfig,
+        report_hardware: HardwareConfig,
     ) -> None:
         tier_lookup = partial(report_helpers.resolve_tier, experiment=report_experiment)
         with tempfile.TemporaryDirectory() as tmpdir:
             path = report_charts.render_memory_by_tier_chart(
-                sample_report_records, tier_lookup, _hardware(), tmpdir
+                sample_report_records, tier_lookup, report_hardware, tmpdir
             )
             assert os.path.isfile(path)
 
@@ -123,7 +115,7 @@ class TestExtraCharts:
     ) -> None:
         tier_lookup = partial(report_helpers.resolve_tier, experiment=report_experiment)
         with tempfile.TemporaryDirectory() as tmpdir:
-            path = report_charts_extra.render_memory_vs_throughput_scatter(
+            path = report_charts_scatter.render_memory_vs_throughput_scatter(
                 sample_report_records, tier_lookup, tmpdir
             )
             assert os.path.isfile(path)
@@ -132,6 +124,7 @@ class TestExtraCharts:
         self,
         sample_report_records: list[MetricsRecord],
         report_experiment: ExperimentConfig,
+        report_hardware: HardwareConfig,
     ) -> None:
         """sample_report_records already includes an oom record (run_004)."""
         tier_lookup = partial(report_helpers.resolve_tier, experiment=report_experiment)
@@ -140,11 +133,11 @@ class TestExtraCharts:
                 sample_report_records, tier_lookup, tmpdir
             )
             assert report_charts.render_memory_by_tier_chart(
-                sample_report_records, tier_lookup, _hardware(), tmpdir
+                sample_report_records, tier_lookup, report_hardware, tmpdir
             )
             assert report_charts_extra.render_latency_breakdown_chart(
                 sample_report_records, tier_lookup, tmpdir
             )
-            assert report_charts_extra.render_memory_vs_throughput_scatter(
+            assert report_charts_scatter.render_memory_vs_throughput_scatter(
                 sample_report_records, tier_lookup, tmpdir
             )

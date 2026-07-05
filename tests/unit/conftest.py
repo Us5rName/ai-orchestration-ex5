@@ -23,6 +23,7 @@ from tests.unit.fixtures_metrics import sample_records  # noqa: F401
 from tests.unit.fixtures_report import (  # noqa: F401
     empty_prompt_id_records,
     report_experiment,
+    report_hardware,
     sample_report_records,
 )
 

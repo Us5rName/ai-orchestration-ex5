@@ -1,7 +1,8 @@
 """Report orchestrator + narrative summary for the reporting layer (§5.3).
 
 New, additive module. Consumes ResultWriter.load() output; produces
-the full §5 table, CSV, seven charts, and a hardware-aware narrative.
+the full §5 table, CSV, eight charts (V1-V7 + V2b), and a
+hardware-aware narrative.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from airllm_benchmark.shared.config import load_experiment, load_hardware
 
 from . import report_charts as _charts
 from . import report_charts_extra as _charts_extra
+from . import report_charts_scatter as _charts_scatter
 from . import report_helpers as _helpers
 from . import report_tables as _tables
 from .report_narrative import build_narrative_summary
@@ -30,8 +32,8 @@ class ReportResult:
 
     Attributes:
         table_text: Full §5.1 comparison table.
-        chart_paths: Absolute paths to the generated V1-V7 chart PNGs
-            (empty-data charts are skipped, not included).
+        chart_paths: Absolute paths to the generated V1-V7 (+V2b) chart
+            PNGs (empty-data charts are skipped, not included).
         csv_path: Absolute path to the exported metrics CSV.
         summary_text: Hardware-aware narrative summary (§5.3).
     """
@@ -46,7 +48,7 @@ class ReportBuilder:
     """Builds the full §5 reporting-layer output from metrics records."""
 
     def build(self, records: list[MetricsRecord], output_dir: str = "assets") -> ReportResult:
-        """Build the full report: table, CSV, seven charts, narrative.
+        """Build the full report: table, CSV, eight charts, narrative.
 
         Args:
             records: Metrics records to report on (from ResultWriter.load()).
@@ -71,11 +73,12 @@ class ReportBuilder:
             for path in [
                 _charts.render_latency_by_tier_chart(records, tier_lookup, output_dir),
                 _charts.render_memory_by_tier_chart(records, tier_lookup, hardware, output_dir),
+                _charts.render_vram_by_tier_chart(records, tier_lookup, hardware, output_dir),
                 _charts.render_throughput_chart(records, tier_lookup, output_dir),
                 _charts_extra.render_latency_breakdown_chart(records, tier_lookup, output_dir),
                 _charts_extra.render_prompt_sensitivity_chart(records, output_dir),
-                _charts_extra.render_memory_vs_throughput_scatter(records, tier_lookup, output_dir),
-                _charts.render_vram_by_tier_chart(records, tier_lookup, hardware, output_dir),
+                _charts_scatter.render_memory_vs_throughput_scatter(records, tier_lookup, output_dir),
+                _charts_scatter.render_vram_vs_throughput_scatter(records, tier_lookup, output_dir),
             ]
             if path
         ]

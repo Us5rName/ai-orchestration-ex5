@@ -1,8 +1,9 @@
-"""V4-V6 charts for the reporting layer (§5.2).
+"""V4-V5 charts for the reporting layer (§5.2).
 
-Split from report_charts.py to stay under the 150-line limit. Uses
-matplotlib directly for the stacked/line/scatter forms not covered
-by report_chart_core's grouped-bar renderer.
+Split from report_charts.py to stay under the 150-line limit. V6-V7
+(scatter charts) live in report_charts_scatter.py. Uses matplotlib
+directly for the stacked/line forms not covered by
+report_chart_core's grouped-bar renderer.
 """
 
 from __future__ import annotations
@@ -100,39 +101,3 @@ def render_prompt_sensitivity_chart(
     return os.path.abspath(output_path)
 
 
-def render_memory_vs_throughput_scatter(
-    records: list[MetricsRecord],
-    tier_lookup: Callable[[str], str],
-    output_dir: str,
-) -> str:
-    """V6: scatter of peak_ram_mb (x) vs generation_throughput (y), successful runs only."""
-    successful = [r for r in records if r.status == "success"]
-    if not successful:
-        return ""
-
-    fig, ax = plt.subplots(figsize=(10, 6))
-    seen_modes: set[str] = set()
-    for r in successful:
-        mode_color = _helpers.MODE_COLORS.get(r.mode, "#9E9E9E")
-        label = r.mode if r.mode not in seen_modes else None
-        seen_modes.add(r.mode)
-        ax.scatter(r.peak_ram_mb, r.generation_throughput, color=mode_color, s=80, label=label)
-        ax.annotate(
-            tier_lookup(r.model),
-            (r.peak_ram_mb, r.generation_throughput),
-            textcoords="offset points",
-            xytext=(5, 5),
-            fontsize=8,
-        )
-
-    ax.set_xlabel("Peak RAM (MB)", fontsize=11)
-    ax.set_ylabel("Throughput (tok/s)", fontsize=11)
-    ax.set_title("Memory vs Throughput Trade-off", fontsize=13)
-    ax.tick_params(axis="both", labelsize=10)
-    ax.legend(fontsize=9)
-
-    output_path = os.path.join(output_dir, "memory_vs_throughput.png")
-    fig.tight_layout()
-    fig.savefig(output_path, dpi=300)
-    plt.close(fig)
-    return os.path.abspath(output_path)

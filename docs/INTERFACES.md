@@ -2,9 +2,9 @@
 
 | Metadata      | Value                                  |
 | ------------- | -------------------------------------- |
-| **Version**   | 1.06                                   |
+| **Version**   | 1.07                                   |
 | **Based on**  | `docs/PRD.md` v1.00, `docs/PLAN.md` v1.00 |
-| **Changes**   | Added `BenchmarkSDK.generate_report()` + `ReportResult` (§1, §11) — additive §5 reporting layer (full table, CSV, six charts, narrative), opt-in via `--report`; Added `BenchmarkSDK.validate()` + `ValidationResult` (§1, §10) per task 7.4; `BenchmarkSummaryResult` (§1) replacing bare dict per INCONSISTENCIES #2 |
+| **Changes**   | Added `BenchmarkSDK.generate_report()` + `ReportResult` (§1, §11) — additive §5 reporting layer (full table, CSV, six charts, narrative), opt-in via `--report`; Added `BenchmarkSDK.validate()` + `ValidationResult` (§1, §10) per task 7.4; `BenchmarkSummaryResult` (§1) replacing bare dict per INCONSISTENCIES #2. **v1.07**: real TTFT (`MetricsCollector.mark_first_token`, §5); V1 latency chart + legacy `Visualizer` latency chart gained a log-scale y-axis; report layer grew from six to eight charts (added V2b `render_vram_by_tier_chart` and V7 `render_vram_vs_throughput_scatter`, §11); `HardwareConfig` gained `vram_gb`. |
 
 ---
 
@@ -72,8 +72,8 @@ class BenchmarkSDK:
 
         Additive, opt-in — does not affect run_benchmark()'s existing
         2-chart visualization path. Loads records via ResultWriter.load(),
-        then builds the full comparison table, CSV export, six charts
-        (V1-V6), and a hardware-aware narrative summary.
+        then builds the full comparison table, CSV export, eight charts
+        (V1-V7 + V2b), and a hardware-aware narrative summary.
 
         Args:
             results_path: Path to a metrics_<timestamp>.json results file.
@@ -489,7 +489,7 @@ runs inference. Exists alongside `--single` and `--run-all`:
 ## 11. Report Builder — `services/report_builder.py`
 
 Additive reporting layer implementing BENCHMARK.md §5: the full 10-column
-comparison table, CSV export, seven charts (V1-V7, 300 DPI), and a
+comparison table, CSV export, eight charts (V1-V7 + V2b, 300 DPI), and a
 hardware-aware narrative summary. Pure consumer of `ResultWriter.load()`
 output — reads `MetricsRecord` fields, `config/experiment.json` (tier
 mapping), and `config/hardware.json` (RAM/VRAM reference lines, hardware
@@ -513,7 +513,7 @@ class ReportBuilder:
     """Builds the full §5 reporting-layer output from metrics records."""
 
     def build(self, records: list[MetricsRecord], output_dir: str = "assets") -> ReportResult:
-        """Build the full report: table, CSV, seven charts, narrative.
+        """Build the full report: table, CSV, eight charts, narrative.
 
         Args:
             records: Metrics records to report on (from ResultWriter.load()).
@@ -527,12 +527,13 @@ class ReportBuilder:
 | Field | Type | Description |
 |-------|------|-------------|
 | `table_text` | str | Full §5.1 comparison table (Model, Tier, Mode, Load, TTFT, Runtime, Throughput, Peak RAM, Peak VRAM, Status) |
-| `chart_paths` | list[str] | Absolute paths to generated V1-V7 chart PNGs (charts with no data are skipped, not included) |
+| `chart_paths` | list[str] | Absolute paths to generated V1-V7 (+V2b) chart PNGs (charts with no data are skipped, not included) |
 | `csv_path` | str | Absolute path to the exported `metrics.csv` (18 `MetricsRecord` fields + derived `tier`) |
 | `summary_text` | str | Hardware-aware narrative: hardware line, key findings, AirLLM trade-off, anomalies |
 
-Chart functions live in `services/report_charts.py` (V1-V3, V7) and
-`services/report_charts_extra.py` (V4-V6); shared bar-chart rendering is
+Chart functions live in `services/report_charts.py` (V1-V3, V2b),
+`services/report_charts_extra.py` (V4-V5), and
+`services/report_charts_scatter.py` (V6-V7); shared bar-chart rendering is
 in `services/report_chart_core.py`; tier/grouping lookups are in
 `services/report_helpers.py`; the narrative builder is in
 `services/report_narrative.py`.
@@ -541,8 +542,9 @@ in `services/report_chart_core.py`; tier/grouping lookups are in
 |-------|----------|--------------|
 | V1 | `render_latency_by_tier_chart` | Grouped bar, `total_runtime_s` by tier x mode. Log-scale y-axis (GPU and CPU-raw latency span orders of magnitude). |
 | V2 | `render_memory_by_tier_chart` | Grouped bar, `peak_ram_mb` by tier x mode, with a "Total RAM" reference line. |
+| V2b | `render_vram_by_tier_chart` | Grouped bar, `peak_vram_mb` by tier x mode, with a "Total VRAM" reference line from `hardware.vram_gb`. |
 | V3 | `render_throughput_chart` | Grouped bar, `generation_throughput` by tier x mode (successful runs only). |
 | V4 | `render_latency_breakdown_chart` | Stacked bar, Load/TTFT/Generation time by tier x mode. |
 | V5 | `render_prompt_sensitivity_chart` | Line chart, `total_runtime_s` by prompt_id, one line per (model, mode). |
 | V6 | `render_memory_vs_throughput_scatter` | Scatter, `peak_ram_mb` vs `generation_throughput` (successful runs only). |
-| V7 | `render_vram_by_tier_chart` | Grouped bar, `peak_vram_mb` by tier x mode, with a "Total VRAM" reference line from `hardware.vram_gb`. |
+| V7 | `render_vram_vs_throughput_scatter` | Scatter, `peak_vram_mb` vs `generation_throughput` (successful runs only). |

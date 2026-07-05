@@ -1,6 +1,6 @@
-"""V1-V3 comparison charts for the reporting layer (§5.2).
+"""V1-V3 and V2b comparison charts for the reporting layer (§5.2).
 
-New, additive module. V4-V6 live in report_charts_extra.py to keep
+New, additive module. V4-V7 live in report_charts_extra.py to keep
 both files under the 150-line limit.
 """
 
@@ -104,7 +104,7 @@ def render_vram_by_tier_chart(
     hardware: object,
     output_dir: str,
 ) -> str:
-    """V7: grouped bar chart of peak_vram_mb by tier x mode.
+    """V2b: grouped bar chart of peak_vram_mb by tier x mode.
 
     Draws a "Total VRAM" reference line from hardware.vram_gb.
     """

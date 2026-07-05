@@ -125,7 +125,7 @@ To select a provider for GPU or CPU baseline, set `gpu_provider` or `cpu_baselin
 | `cpu`            | string  | CPU model name                        |
 | `gpu`            | string  | GPU model name + VRAM                 |
 | `ram_gb`         | number  | Total system RAM (GB)                 |
-| `vram_gb`        | number  | Total GPU VRAM (GB) — reference line for the V7 VRAM chart (`report_charts.py::render_vram_by_tier_chart`) |
+| `vram_gb`        | number  | Total GPU VRAM (GB) — reference line for the V2b VRAM chart (`report_charts.py::render_vram_by_tier_chart`) |
 | `disk_free_gb`   | number  | Free disk space (GB)                  |
 | `os`             | string  | Operating system + version            |
 | `documented_by`  | string  | Who documented the specs              |
