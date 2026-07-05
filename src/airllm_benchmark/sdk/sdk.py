@@ -16,15 +16,13 @@ from airllm_benchmark.sdk.runner import RunnerManager
 from airllm_benchmark.sdk.sdk_summary import BenchmarkSummaryResult
 from airllm_benchmark.sdk.sdk_validation import ValidationResult, run_validation
 from airllm_benchmark.services.metrics import MetricsRecord
+from airllm_benchmark.services.report_builder import ReportResult
 from airllm_benchmark.services.result_writer import ResultWriter
 from airllm_benchmark.services.visualizer import VisualizationResult, Visualizer
-from airllm_benchmark.shared.config import (
-    load_experiment,
-    load_hardware,
-    validate_hardware,
-)
+from airllm_benchmark.shared.config import load_experiment, load_hardware, validate_hardware
 
 from . import sdk_helpers as _helpers
+from . import sdk_report_helpers as _report_helpers
 
 
 class BenchmarkSDK:
@@ -139,8 +137,6 @@ class BenchmarkSDK:
         """
         return _helpers.render_visualization(self._visualizer, records, output_dir)
 
-    # ——— docs/TODO.md task 7.4: pre-benchmark validation ———
-
     def validate(self) -> ValidationResult:
         """Validate config, providers, and model cache. Runs no inference.
 
@@ -148,3 +144,7 @@ class BenchmarkSDK:
             ValidationResult with config/provider/cache check outcomes.
         """
         return run_validation(self._config_dir)
+
+    def generate_report(self, results_path: str, output_dir: str | None = None) -> ReportResult:
+        """Generate the full §5 report (table, CSV, charts, narrative). Per INTERFACES.md §11."""
+        return _report_helpers.generate_report(results_path, output_dir)

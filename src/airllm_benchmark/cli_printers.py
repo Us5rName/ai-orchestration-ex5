@@ -12,6 +12,7 @@ from airllm_benchmark.services.metrics import MetricsRecord
 
 if TYPE_CHECKING:
     from airllm_benchmark.sdk.sdk_validation import ValidationResult
+    from airllm_benchmark.services.report_builder import ReportResult
 
 
 def print_result(record: MetricsRecord) -> None:
@@ -105,4 +106,24 @@ def print_validation_result(result: ValidationResult) -> None:
         print(f"    {c_icon}  {model_id}")
 
     print(f"\n  Overall: {'PASSED' if result.passed else 'FAILED'}")
+    print(sep)
+
+
+def print_report_result(result: ReportResult) -> None:
+    """Print the full §5 report: table, narrative, chart/CSV paths.
+
+    Args:
+        result: ReportResult from ``BenchmarkSDK.generate_report()``.
+    """
+    sep = "=" * 60
+    print(sep)
+    print("  Benchmark Report")
+    print(sep)
+    print(result.table_text)
+    print()
+    print(result.summary_text)
+    print()
+    print(f"  CSV: {result.csv_path}")
+    if result.chart_paths:
+        print(f"  Charts: {', '.join(result.chart_paths)}")
     print(sep)
