@@ -14,7 +14,6 @@ these require a submodule or network access.
 | `check_source_archives.py` | pipeline | No tracked archives (allowlists `.agents/ai-orchestration-skills.zip` — consider untracking it) |
 | `check_planning_ids.py` | pipeline | No duplicate `N.M` task-ID rows in `docs/TODO.md` |
 | `check_workflow_permissions.py` | pipeline | Every workflow declares minimal `permissions` (needs `pyyaml`) |
-| `readme_sync.py` | ex04, rewritten | Regenerates the `repo-facts` region in `README.md`; `build` / `check` |
 
 ## Run the whole suite (exactly as CI does)
 
@@ -29,15 +28,13 @@ uv run python scripts/check_markdown_links.py
 uv run python scripts/check_source_archives.py
 uv run python scripts/check_planning_ids.py
 uv run python scripts/check_workflow_permissions.py
-uv run python scripts/readme_sync.py check
 uv run pytest --cov=airllm_benchmark --cov-fail-under=85
 ```
 
 ## Notes
 
-- After changing line counts, hardware specs, or the test count, run
-  `uv run python scripts/readme_sync.py build` and commit the result, or the
-  `readme-facts` gate will fail.
+- The `## Repository facts` section in `README.md` (test count, module line
+  counts, hardware) is maintained by hand — update it when those change.
 - A few tests (`tests/pocs/*`, `test_transformers_device.py::TestCpuPath`)
   load real tiny models from HuggingFace and need network; they are the only
   non-keyless tests and are skipped/failed only when offline.
@@ -46,7 +43,7 @@ uv run pytest --cov=airllm_benchmark --cov-fail-under=85
 
 The game/MCP launchers (`selfplay.py`, `train_qtable.py`, `run_stack.py`,
 `run_peer_match.py`, `peer_sync.py`, `launch_common.py`,
-`mcp_client_loader.py`), the Ollama→OpenRouter shim (`openrouter_adapter.py`,
+`mcp_client_loader.py`), the OpenRouter shim (`openrouter_adapter.py`,
 irrelevant to a local-inference benchmark), the LaTeX build chain, and the
 `gh`-authenticated milestone tooling all belong to other projects and have no
 role here.

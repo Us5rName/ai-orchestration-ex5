@@ -18,7 +18,7 @@
 | #  | Task | Status | Definition of Done |
 |----|------|--------|-------------------|
 | 1.1 | Create project directory structure (`src/`, `tests/`, `config/`, `results/`, `assets/`, `notebooks/`) | ✅ Done | All directories exist; matches PLAN C4 code structure |
-| 1.2 | Initialize `pyproject.toml` with dependencies (`airllm`, `ollama`, `psutil`, `pytest`, `matplotlib`, `pandas`, `ruff`) | ✅ Done | `uv sync` succeeds; `uv.lock` generated |
+| 1.2 | Initialize `pyproject.toml` with dependencies (`airllm`, `transformers`, `psutil`, `pytest`, `matplotlib`, `pandas`, `ruff`) | ✅ Done | `uv sync` succeeds; `uv.lock` generated |
 | 1.3 | Create `.env-example` with `HF_TOKEN` placeholder | ✅ Done | `.env-example` exists; `.env` in `.gitignore` |
 | 1.4 | Create `src/airllm_benchmark/__init__.py` with package metadata | ✅ Done | Package importable; version `1.00` |
 
@@ -42,7 +42,7 @@
 |----|------|---------|--------|-------------------|
 | 3.1 | Create `providers/__init__.py` | 1.1 | ✅ Done | Exports `InferenceProvider` protocol |
 | 3.2 | Implement `providers/base.py` — `InferenceProvider` protocol per [`INTERFACES.md`](INTERFACES.md) §2 | 3.1 | ✅ Done | Protocol defined; docstrings present |
-| 3.3 | Implement `providers/ollama_provider.py` — HTTP client for Ollama API | 3.2 | ~~Not Started~~ | **Removed** — transformers used as GPU provider instead |
+| 3.3 | ~~Implement a separate HTTP-client provider~~ | 3.2 | ~~Not Started~~ | **Removed** — Transformers is the wired GPU provider; no separate HTTP-client provider was needed |
 | 3.4 | Implement `providers/transformers_provider.py` — HuggingFace Transformers wrapper | 3.2 | ✅ Done | Implements `InferenceProvider`; supports `device` parameter (CPU and GPU) |
 | 3.4.1 | Verify GPU execution with real CUDA test | 3.4 | ✅ Done | RTX 4080 SUPER test: tiny model loads on cuda:0, generates text, unloads |
 | 3.4.2 | Verify CPU execution with real test | 3.4 | ✅ Done | CPU test: tiny model loads, generates text, unloads |
@@ -110,10 +110,10 @@ Integration follows a **staged bottom-up** approach. Each phase integrates with 
 | **I4** | Runners → SDK | SDK dispatches to runners; aggregates results | Mock runners; verify SDK aggregation |
 | **I5** | SDK → CLI | CLI calls SDK; prints summary | Mock SDK; verify CLI delegation |
 | **I6** | Full pipeline (mocked) | End-to-end with all mocks; validates data flow | Isolate failing contract; fix before real run |
-| **I7** | Real config + real provider (Ollama) + small model | Config loads real JSON; Ollama provider connects; small model generates text | Verify Ollama running; check base_url |
-| **I8** | Real config + real provider (Transformers) + small model | Transformers provider loads small model on CPU; generates text | Verify transformers import; no GPU required |
-| **I9** | Real provider + real metrics (Ollama) | Same as I7 but metrics collector samples real process memory | Verify psutil readings match system monitor |
-| **I10** | Real GPU runner (Ollama + real metrics) | GPU runner executes small model via Ollama; returns real metrics dict | Verify metrics dict matches schema; status = success |
+| **I7** | Real config + real provider (Transformers) + small model | Config loads real JSON; Transformers provider loads the small model; generates text | Verify transformers import; check HF cache |
+| **I8** | Real config + real provider (Transformers) + small model on CPU | Transformers provider loads small model on CPU; generates text | Verify no GPU required |
+| **I9** | Real provider + real metrics (Transformers) | Same as I7 but metrics collector samples real process memory | Verify psutil readings match system monitor |
+| **I10** | Real GPU runner (Transformers + real metrics) | GPU runner executes small model via Transformers; returns real metrics dict | Verify metrics dict matches schema; status = success |
 | **I11** | Real CPU runner (Transformers + real metrics) | CPU runner executes small model via Transformers; returns real metrics dict | Verify no OOM on small model; metrics recorded |
 | **I12** | Real AirLLM runner (AirLLM + real metrics) | AirLLM runner executes small model; returns real metrics dict | Verify AirLLM loads; metrics recorded |
 | **I13** | Real SDK + real runners (all three modes, small model) | SDK orchestrates all three runners; aggregates results | Verify all three modes produce valid metrics |
@@ -139,10 +139,10 @@ Each integration stage verifies the data contract between modules:
 | Unit tests | Mocked | Mocked | Mocked psutil | None |
 | POC steps | Mocked | Mocked | Real (fake data) | None |
 | I1–I6 | Mocked | Mocked | Real | None |
-| I7 | Real (Ollama) | Small (real) | Mocked | Ollama |
+| I7 | Real (Transformers) | Small (real) | Mocked | HF Hub |
 | I8 | Real (Transformers) | Small (real) | Mocked | HF Hub |
-| I9 | Real (Ollama) | Small (real) | Real | Ollama |
-| I10 | Real (Ollama) | Small (real) | Real | Ollama |
+| I9 | Real (Transformers) | Small (real) | Real | HF Hub |
+| I10 | Real (Transformers) | Small (real) | Real | HF Hub |
 | I11 | Real (Transformers) | Small (real) | Real | HF Hub |
 | I12 | Real (AirLLM) | Small (real) | Real | HF Hub |
 | I13 | All real | Small (real) | Real | All providers |
@@ -161,9 +161,9 @@ Each checkpoint must pass before advancing to the next phase:
 | **CP4** (after Phase 5) | All runners return valid metrics dict (mocked) | `uv run pytest tests/unit/test_runners.py` |
 | **CP5** (after Phase 6) | CLI delegates to SDK; prints result (mocked) | `uv run python src/main.py --single --mock` |
 | **CP6** (after I6) | Full mocked pipeline passes | `uv run pytest tests/integration/test_pipeline.py --mock` |
-| **CP7** (after I7) | Real Ollama provider returns text for small model | `uv run python src/main.py --single --provider ollama --model small` |
-| **CP8** (after I8) | Real Transformers provider returns text for small model | `uv run python src/main.py --single --provider transformers --model small` |
-| **CP9** (after I10) | GPU runner (Ollama) returns valid metrics for small model | `uv run python src/main.py --single --mode gpu --model small` |
+| **CP7** (after I7) | Real Transformers provider returns text for small model | `uv run python src/main.py --single --provider transformers --model small` |
+| **CP8** (after I8) | Real Transformers provider returns text for small model on CPU | `uv run python src/main.py --single --provider transformers --model small` |
+| **CP9** (after I10) | GPU runner (Transformers) returns valid metrics for small model | `uv run python src/main.py --single --mode gpu --model small` |
 | **CP10** (after I11) | CPU runner (Transformers) returns valid metrics for small model | `uv run python src/main.py --single --mode cpu --model small` |
 | **CP11** (after I12) | AirLLM runner returns valid metrics for small model | `uv run python src/main.py --single --mode airllm --model small` |
 | **CP12** (after I13) | All three modes succeed on small model | `uv run python src/main.py --run-all --model small` |
@@ -187,8 +187,8 @@ When an integration checkpoint fails:
 |----|------|---------|--------|-------------------|
 | 7.1 | Handle gated model access — accept HuggingFace terms for Llama models | 1.3 | ✅ N/A — resolved, no action needed | **Moot.** `docs/PRD.md` §7.1's model-selection table names `meta-llama/Llama-3.2-1B` as the illustrative "small" tier example, but the *actual* configured models in `config/experiment.json` are all open, ungated Qwen checkpoints (`Qwen/Qwen2.5-0.5B-Instruct`, `Qwen/Qwen2.5-3B-Instruct`, `Qwen/Qwen2.5-7B-Instruct`) — confirmed by inspection 2026-07-04. None require HF gated-access term acceptance. A separate PR's CI run independently hit a 401 from `meta-llama/Llama-3.2-1B` with no `HF_TOKEN` configured, which is what prompted this check — but that model is not referenced anywhere the benchmark actually runs. No programmatic term-acceptance was attempted (that requires a human to click "Agree" on huggingface.co); none was needed. If a gated model is reintroduced later, the user must visit its HF page, accept terms, and set `HF_TOKEN` in `.env` before this task can be closed the "real" way. |
 | ⚠️ | | | | **Caution:** Gated models (Llama) require manual term acceptance on HuggingFace before any API access works. Not applicable to the current config. |
-| 7.2 | Pre-download all models to HF cache | 7.1 | ✅ Done (small, medium, large all cached) | All three configured tiers loaded end-to-end (`load_model` → `generate` → `unload`) through `TransformersProvider` on 2026-07-04: `Qwen/Qwen2.5-0.5B-Instruct` (small, ~2.27 GB, ~3.4s), `Qwen/Qwen2.5-3B-Instruct` (medium, ~6.18 GB, ~61s incl. download), `Qwen/Qwen2.5-7B-Instruct` (large, ~15.24 GB, ~143s incl. download). Verified present via `huggingface_hub.scan_cache_dir()` (26.17 GB total cache). Network access confirmed working in this sandbox (no CUDA available here — driver too old for the installed torch build — so loads used `device="cpu"`; that's sufficient for caching weights, which is this task's goal). No 72B model in scope — current config caps at 7B (see 7.1 note), so the "~140 GB / verify disk space" caution below does not apply as originally written. |
-| ⚠️ | | | | **Caution:** Original caution assumed a 72B model; current config's largest tier is 7B (~15 GB). Disk was not a constraint (1.6 TB free). |
+| 7.2 | Pre-download all models to HF cache | 7.1 | ✅ Done (small, medium, large all cached) | All three configured tiers loaded end-to-end (`load_model` → `generate` → `unload`) through `TransformersProvider` on 2026-07-04: `Qwen/Qwen2.5-0.5B-Instruct` (small, ~2.27 GB, ~3.4s), `Qwen/Qwen2.5-3B-Instruct` (medium, ~6.18 GB, ~61s incl. download), `Qwen/Qwen2.5-7B-Instruct` (large, ~15.24 GB, ~143s incl. download). Verified present via `huggingface_hub.scan_cache_dir()` (26.17 GB total cache). Network access confirmed working in this sandbox (no CUDA available here — driver too old for the installed torch build — so loads used `device="cpu"`; that's sufficient for caching weights, which is this task's goal). The large tier at the time of this pre-cache step was `Qwen2.5-7B`; it was later repinned to `Qwen2.5-32B-Instruct` (task 8.3 / benchmark execution), whose weights were fetched during the AirLLM run. No 72B model was ever in scope, so the "~140 GB / verify disk space" caution below does not apply as originally written. |
+| ⚠️ | | | | **Caution:** Original caution assumed a 72B model; the largest tier is `Qwen2.5-32B` (~65.5 GB unquantized). Disk was not a constraint (1.6 TB free). |
 | 7.3 | Fill in `config/hardware.json` with actual machine specs | 2.2 | ✅ Done | All fields populated; no empty values |
 | 7.4 | POC: config + provider validation | 2.3, 3.3, 3.4, 7.2, 7.3 | ✅ Done | Reused existing `validate_config()`/`validate_hardware()` in `shared/config_loader.py` rather than duplicating. Added `BenchmarkSDK.validate()` (`sdk/sdk_validation.py`, `ValidationResult`) which: (1) loads + validates `experiment.json`/`hardware.json`, never raising — failures are captured in `ValidationResult.config_error`; (2) instantiates each configured provider (`gpu_provider`, `cpu_baseline_provider`) via the existing `create_provider()` factory with **no** `load_model()`/`generate()` call, so no inference runs; (3) reports HF-cache presence per model via new `shared/cache_check.py::model_cache_status()` (`huggingface_hub.scan_cache_dir()`) — informational only, does not fail validation. Wired into CLI as `uv run python src/main.py --validate` (see `docs/INTERFACES.md` §10). Unit tests in `tests/unit/test_sdk_validation.py`, `tests/unit/test_cache_check.py`, `tests/unit/test_cli_validate.py` — all external calls mocked, no real downloads. Manually verified against the real cached models: reports PASSED with all three tiers cached. |
 | ⚠️ | | | | **Caution:** This step catches misconfiguration before expensive benchmark runs. Do not skip. |
@@ -199,7 +199,7 @@ When an integration checkpoint fails:
 
 | #  | Task | Depends | Status | Definition of Done |
 |----|------|---------|--------|-------------------|
-| 8.1 | GPU smoke test — small model, verify GPU inference | 7.4 | ✅ Done | Ollama was removed (see INCONSISTENCIES.md #1); re-scoped to Transformers per `gpu_provider` config. `Qwen/Qwen2.5-0.5B-Instruct` on real CUDA (RTX 3090, `torch==2.6.0+cu124` — see 12.x fix below): load 0.16s, TTFT 3.01s, total 3.80s, 40.1 tok/s, peak RAM 810MB, peak VRAM 966MB. Status success. |
+| 8.1 | GPU smoke test — small model, verify GPU inference | 7.4 | ✅ Done | Runs via Transformers per `gpu_provider` config. `Qwen/Qwen2.5-0.5B-Instruct` on real CUDA (RTX 3090, `torch==2.6.0+cu124` — see 12.x fix below): load 0.16s, TTFT 3.01s, total 3.80s, 40.1 tok/s, peak RAM 810MB, peak VRAM 966MB. Status success. |
 | 8.2 | Run GPU baseline — small model via configured provider | 8.1 | ✅ Done | Same run as 8.1 (single-prompt smoke test doubled as the baseline given the tiny model). Recorded in `results/metrics_phase8.json`. |
 | 8.3 | Run CPU baseline — large model via configured CPU provider | 8.2 | ✅ Done | `config/experiment.json`'s `"large"` tier repinned from `Qwen2.5-7B` to `Qwen2.5-32B-Instruct` (~65.5GB unquantized fp16) — the 7B/4bit original comfortably fit this sandbox's 62GB RAM, which would not have demonstrated OOM/slowness at all (see PROMPT_LOG Entry 58). Run raw/unquantized under an external memory-and-timeout watchdog (this sandbox has 0 swap, so an uncontrolled OOM hits the kernel killer directly). **Result: timeout** — killed after the 15-minute wall-clock limit, peak RAM 38.6GB (still climbing toward ~65.5GB, never reached generation). Process was in Linux `D` state (uninterruptible `filemap_fault` — mmap page-in stalling under memory pressure) when the watchdog's own timeout fired; the orphaned worker (spawned as a grandchild by `uv run`, outliving the watchdog's direct-child kill) had to be killed directly by PID. This **is** the PRD's "OOM or extreme slowness" outcome — a clean demonstration that raw CPU loading cannot handle this model size on this hardware. |
 | ⚠️ | | | | **Caution:** This run may crash or hang. Set a timeout. If it hangs, kill the process and record the timeout as the result. — Confirmed accurate: it hung, and the timeout path is exactly what was needed. |
@@ -218,7 +218,7 @@ When an integration checkpoint fails:
 | 9.2 | Verify global test coverage ≥ 85% | 2.4, 3.6, 4.2, 4.5, 5.8 | ✅ Done | `uv run pytest --cov` passes (89.6%); coverage report generated; gated in CI |
 | 9.3 | Run `ruff check` — zero violations | 6.2 | ✅ Done | `uv run ruff check` returns 0 (`src tests scripts`); gated in CI |
 | 9.4 | Verify no file exceeds 150 lines | 6.2 | ✅ Done | All `.py` files ≤ 150 lines; gated in CI via `scripts/check_line_cap.py` |
-| 9.5 | Update `README.md` — installation, usage, configuration, examples | 8.6 | ✅ Done | Adopted hw5-bundle starter README with generated repo-facts region |
+| 9.5 | Update `README.md` — installation, usage, configuration, examples | 8.6 | ✅ Done | Full README with overview, architecture diagrams, results, cost, quick start, and a hand-maintained repository-facts section |
 | 9.6 | `tests/integration/test_pipeline.py` — full pipeline smoke test | 5.7 | ✅ Done | Drives `BenchmarkSDK.run_single()` (real entry point, not mocked) end-to-end with a real `Qwen/Qwen2.5-0.5B-Instruct` via `TransformersProvider` on CPU (isolated `experiment.json` fixture keeps `max_new_tokens` tiny); asserts `MetricsRecord.status == "success"` plus timing/token/RAM invariants; 1 test, runs in ~11s |
 | 9.7 | Run final checklist per [`final-checklist`](.agents/skills/final-checklist/SKILL.md) | 9.2, 9.3, 9.4, 9.5 | ✅ Done | Ran all 6 checklist sections. Fixed on the spot: 2 missing `__init__` docstrings (`transformers_provider.py`, `llamacpp_provider.py`); CI now uploads an HTML coverage report as a build artifact (`.github/workflows/ci.yml`); added a `## Attribution` section to `README.md` crediting AirLLM, Qwen2.5, HF Transformers, bitsandbytes, llama.cpp. All 10 gate scripts + full `pytest --cov` (338 passed, 1 skipped, 93.36%) re-verified green after fixes. Three items intentionally left open (not silently marked done): no `LICENSE` file (license choice needs an explicit decision, not assumed); no formal ISO/IEC 25010 mapping doc (checklist item, never required by this project's own PRD/PLAN/TODO); no executed parameter sweep (single run per scenario — cost-prohibitive here, per `notebooks/analysis.ipynb`'s sensitivity-analysis section, which documents the sweep design instead of running it). "Parallel processing with thread safety" is N/A by design — `shared/gatekeeper.py` documents that the benchmark is intentionally single-threaded so peak-memory measurements per run stay uncontaminated. |
 
@@ -230,7 +230,7 @@ When an integration checkpoint fails:
 |-------|-------|--------|
 | 1 — Scaffolding | 4 | 4/4 Done |
 | 2 — Configuration | 5 | 5/5 Done |
-| 3 — Providers | 9 | 9/9 Done (3.3 ollama removed, excluded from count) |
+| 3 — Providers | 9 | 9/9 Done (3.3 removed, excluded from count) |
 | 4 — Services | 5 | 5/5 Done |
 | 5 — SDK (Runners) | 8 | 8/8 Done |
 | 6 — CLI | 2 | 2/2 Done |

@@ -9,7 +9,7 @@ This project benchmarks LLM inference across three memory scenarios:
 - **Large model on CPU (raw)** — OOM or extreme slowness (model exceeds memory)
 - **Large model via AirLLM** — succeeds with latency trade-off (paged inference)
 
-The key distinction is whether the model fits in available memory — not which provider is used. Providers (Ollama, Transformers, llama.cpp) are configurable and support both GPU and CPU targets.
+The key distinction is whether the model fits in available memory — not which provider is used. Providers (Transformers, llama.cpp) are configurable and support both GPU and CPU targets.
 
 ## Mandatory Documents
 
@@ -52,8 +52,7 @@ src/airllm_benchmark/
 │   └── airllm_runner.py          # AirLLM paged runner (builtin)
 ├── providers/                    # Providers layer (facade pattern)
 │   ├── base.py                   # InferenceProvider protocol
-│   ├── ollama_provider.py        # Ollama HTTP client
-│   ├── transformers_provider.py  # HuggingFace Transformers wrapper
+│   ├── transformers_provider.py  # HuggingFace Transformers wrapper (wired)
 │   └── llamacpp_provider.py      # llama.cpp Python bindings
 ├── services/                     # Supporting services
 │   ├── metrics.py                # Timing + psutil memory sampling
@@ -76,7 +75,7 @@ src/airllm_benchmark/
 - AirLLM has its own runner (builtin, no provider — uses paged inference).
 
 ### API Gatekeeper
-- All external API calls (Ollama HTTP, HuggingFace downloads) flow through `shared/gatekeeper.py`.
+- All external API calls (HuggingFace downloads) flow through `shared/gatekeeper.py`.
 - Rate limiting enforced from `config/rate_limits.json`.
 - FIFO queue for overflow; never crash due to rate limits.
 
@@ -92,7 +91,7 @@ src/airllm_benchmark/
 ## 5. Quality Assurance & Testing
 - **TDD**: Tests written alongside each phase (see `docs/TODO.md` integration plan).
 - **Coverage**: ≥ 85% global coverage (statement, branch, critical path).
-- **Mocking**: All external dependencies mocked in unit tests (Ollama, HF Hub, psutil).
+- **Mocking**: All external dependencies mocked in unit tests (HF Hub, psutil).
 - **Integration**: Staged bottom-up integration (I1–I15). Checkpoints CP1–CP12.
 
 ## 6. Tooling & Infrastructure

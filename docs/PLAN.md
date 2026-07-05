@@ -22,12 +22,12 @@ C4Context
 
     Person(student, "Student / Researcher", "Runs benchmarks and analyzes results")
     System(benchmark, "AirLLM Benchmark", "CLI tool that runs inference across providers and collects metrics")
-    System_Ext(inference_providers, "Inference Providers", "Ollama, Transformers, llama.cpp, etc.")
+    System_Ext(inference_providers, "Inference Providers", "Transformers, llama.cpp")
     System_Ext(huggingface, "Hugging Face Hub", "Model repository for downloading weights")
     Person(instructor, "Instructor", "Reviews results and visualizations")
 
     Rel(student, benchmark, "Runs via CLI", "uv run")
-    Rel(benchmark, inference_providers, "Sends prompts", "HTTP / Direct")
+    Rel(benchmark, inference_providers, "Sends prompts", "Direct")
     Rel(benchmark, huggingface, "Downloads models", "HTTPS + HF Token")
     Rel(benchmark, instructor, "Produces report", "Charts + Tables")
 ```
@@ -41,7 +41,7 @@ C4Container
     title C2 — Container Model
 
     Person(student, "Student / Researcher")
-    System_Ext(inference_providers, "Inference Providers", "Ollama, Transformers, llama.cpp")
+    System_Ext(inference_providers, "Inference Providers", "Transformers, llama.cpp")
     System_Ext(huggingface, "Hugging Face Hub")
 
     Boundary(app, "AirLLM Benchmark Application") {
@@ -94,8 +94,7 @@ C4Component
     }
 
     Boundary(providers_boundary, "Providers Layer") {
-        Component(ollama_provider, "Ollama Provider", "Python", "HTTP client for Ollama API")
-        Component(transformers_provider, "Transformers Provider", "Python", "HuggingFace Transformers wrapper")
+        Component(transformers_provider, "Transformers Provider", "Python", "HuggingFace Transformers wrapper (wired)")
         Component(llamacpp_provider, "llama.cpp Provider", "Python", "llama.cpp Python bindings")
     }
 
@@ -110,9 +109,7 @@ C4Component
     Rel(runner_mgr, gpu_runner, "Executes", "")
     Rel(runner_mgr, cpu_runner, "Executes", "")
     Rel(runner_mgr, airllm_runner, "Executes", "")
-    Rel(gpu_runner, ollama_provider, "Uses (configurable)", "")
     Rel(gpu_runner, transformers_provider, "Uses (configurable)", "")
-    Rel(cpu_runner, ollama_provider, "Uses (configurable)", "")
     Rel(cpu_runner, transformers_provider, "Uses (configurable)", "")
     Rel(runner_mgr, metrics_collector, "Collects during run", "")
     Rel(metrics_collector, result_writer, "Stores metrics", "")
@@ -135,7 +132,6 @@ src/airllm_benchmark/
 ├── providers/
 │   ├── __init__.py
 │   ├── base.py                 # InferenceProvider protocol
-│   ├── ollama_provider.py      # Ollama HTTP client
 │   ├── transformers_provider.py # HuggingFace Transformers wrapper
 │   └── llamacpp_provider.py    # llama.cpp Python bindings
 ├── services/
@@ -266,7 +262,7 @@ See [`docs/INTERFACES.md`](INTERFACES.md) for the full contract:
 **Status:** Accepted  
 **Date:** 2026-07-03
 
-**Context:** Each inference scenario (GPU, CPU baseline, AirLLM) has fundamentally different loading and generation logic. Multiple inference providers exist (Ollama, Transformers, llama.cpp) and each supports both GPU and CPU targets. The benchmark should not lock into a single provider.
+**Context:** Each inference scenario (GPU, CPU baseline, AirLLM) has fundamentally different loading and generation logic. Multiple inference providers exist (Transformers, llama.cpp) and each supports both GPU and CPU targets. The benchmark should not lock into a single provider.
 
 **Decision:** Introduce a `providers/` layer where each provider implements the `InferenceProvider` protocol. Runners (`gpu_runner`, `cpu_runner`) delegate to a configured provider. Both GPU and CPU baseline runners are provider-configurable via `experiment.json`. AirLLM has its own runner since it uses a different mechanism (paged inference, not a traditional provider).
 
@@ -343,7 +339,7 @@ C4Deployment
     }
 
     System_Boundary(external, "External Services") {
-        System(inference_svc, "Inference Providers", "Ollama, Transformers, llama.cpp, etc.")
+        System(inference_svc, "Inference Providers", "Transformers, llama.cpp")
         System(hf_hub, "Hugging Face Hub", "Model downloads")
     }
 
@@ -376,6 +372,6 @@ C4Deployment
 | --------------- | ----------------------------------------------- | ----------- |
 | **Unit**        | Config loader, metrics collector, visualizer    | `pytest`    |
 | **Integration** | Full pipeline run with small model              | `pytest`    |
-| **Smoke**       | Ollama connectivity, AirLLM import              | Manual      |
+| **Smoke**       | Transformers load, AirLLM import                | Manual      |
 
-**Coverage target:** ≥ 85% (statement, branch, critical path). External dependencies (Ollama, HF Hub) are mocked.
+**Coverage target:** ≥ 85% (statement, branch, critical path). External dependencies (HF Hub) are mocked.

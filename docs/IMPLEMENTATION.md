@@ -52,15 +52,15 @@ Using the **actual code** from the PoCs as the foundation, build the complete mo
 
 ---
 
-## Example: Ollama Provider
+## Example: Transformers Provider
 
 | Step | PoC | Test |
 |------|-----|------|
-| 1 — Library PoC | Import `ollama`, call `ollama.generate()`, print output | Assert output is non-empty string |
-| 2 — Feature PoC: `load_model` | Pull model via `ollama.pull()`, verify model exists locally | Assert model is available |
-| 2 — Feature PoC: `generate` | Call `ollama.generate()` with `options.num_predict`, assert token limit | Assert output ≤ `max_tokens` |
-| 2 — Feature PoC: `unload` | Verify no explicit unload needed (HTTP-based, stateless) | Assert no side effects |
-| 3 — Full Module | Implement `OllamaProvider` class with all three methods | Mock HTTP; test protocol compliance |
+| 1 — Library PoC | Import `transformers`, load a tiny model, call `model.generate()`, print output | Assert output is non-empty string |
+| 2 — Feature PoC: `load_model` | Load via `AutoModelForCausalLM.from_pretrained()` on the target device | Assert model + tokenizer are loaded |
+| 2 — Feature PoC: `generate` | Call `model.generate()` with `max_new_tokens`, assert token limit | Assert output ≤ `max_tokens` |
+| 2 — Feature PoC: `unload` | Free the model + `torch.cuda.empty_cache()` | Assert VRAM released |
+| 3 — Full Module | Implement `TransformersProvider` class with all three methods | Mock HF Hub; test protocol compliance |
 
 ---
 
@@ -76,7 +76,7 @@ Every step (PoC and final module) must obey the project rules from [`CLAUDE.md`]
 | **No Hardcoding** | All config in `config/*.json` or `.env`. Only physical constants in code. | `CLAUDE.md` §4 |
 | **Docstrings** | Every module, class, and function gets a detailed docstring. | `CLAUDE.md` §4 |
 | **Comments** | Explain "Why," not "What." | `CLAUDE.md` §4 |
-| **Mocking** | All external dependencies mocked in unit tests (Ollama, HF Hub, psutil). | `CLAUDE.md` §5 |
+| **Mocking** | All external dependencies mocked in unit tests (HF Hub, psutil). | `CLAUDE.md` §5 |
 | **Coverage** | ≥ 85% global coverage (statement, branch, critical path). | `CLAUDE.md` §5 |
 | **uv Only** | All dependency management via `uv run`. No `pip`, `venv`, `virtualenv`. | `CLAUDE.md` §6 |
 | **SDK-First** | All business logic flows through `sdk/sdk.py`. CLI delegates to SDK. | `CLAUDE.md` §3 |

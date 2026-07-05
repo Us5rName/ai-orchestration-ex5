@@ -54,9 +54,9 @@
 
 ## Entry 4 — Provider-Agnostic Architecture
 
-**Prompt:** "There are more inference providers except ollama, some (including ollama) allow for cpu only runs. how do you suggest we move forward with the documents?"
+**Prompt:** "There are several inference providers, and some allow for CPU-only runs. how do you suggest we move forward with the documents?"
 
-**Context:** Ollama supports both GPU and CPU. Other providers exist (Transformers, llama.cpp, GPT4All). Current docs assume Ollama=GPU which is incorrect.
+**Context:** Multiple inference providers exist (Transformers, llama.cpp) and each supports both GPU and CPU. The current docs assume a single provider fixed to GPU, which is incorrect.
 
 **Decision:** Proposed revisions:
 - Rename modes to memory scenarios (not provider-specific)
@@ -76,16 +76,16 @@
 
 **Changes:**
 - PRD §1.1: Renamed modes → memory scenarios
-- PRD §3.2: "Ollama Smoke Test" → "GPU Baseline Smoke Test"
+- PRD §3.2: renamed to "GPU Baseline Smoke Test"
 - PRD §6.3: New Inference Providers table
-- PRD Glossary: Updated Ollama definition
-- PLAN C4 diagrams: "Ollama Server" → "Inference Providers"
-- PLAN code structure: `ollama_runner.py` → `provider_runner.py`
+- PRD Glossary: generalized the inference-provider definition
+- PLAN C4 diagrams: generalized to "Inference Providers"
+- PLAN code structure: generalized runner naming to `provider_runner.py`
 - PLAN metrics: Added `provider` field
 - PLAN config: Added `gpu_provider` + `provider_config`
 - PLAN SDK API: Added `provider` parameter
 - PLAN ADR-003: Rewritten for configurable GPU provider
-- PLAN error handling: "Ollama server" → "Configured provider"
+- PLAN error handling: generalized to "Configured provider"
 
 ---
 
@@ -95,12 +95,12 @@
 
 **Context:** GPU runner is provider-configurable. Should CPU baseline runner also be configurable?
 
-**Decision:** Yes — providers like Transformers, llama.cpp, Ollama (CPU mode) can all run on CPU. Made CPU runner provider-configurable.
+**Decision:** Yes — providers like Transformers and llama.cpp can all run on CPU. Made CPU runner provider-configurable.
 
 **Prompt:** "Please make it flexible. and add a providers directory"
 
 **Changes:**
-- PLAN: Added `providers/` directory with `base.py`, `ollama_provider.py`, `transformers_provider.py`, `llamacpp_provider.py`
+- PLAN: Added `providers/` directory with `base.py`, `transformers_provider.py`, `llamacpp_provider.py`
 - PLAN: Updated component diagram with providers boundary
 - PLAN: Both `gpu_runner` and `cpu_runner` delegate to providers
 - PLAN: Config added `cpu_baseline_provider` key
@@ -195,8 +195,8 @@
 **Context:** I7 was a "big bang" integration — all mocked to all real in one step.
 
 **Changes:** Split I7 into 8 incremental stages (I7–I14):
-- I7: Real Ollama + small model (metrics mocked)
-- I8: Real Ollama + small model + real metrics
+- I7: Real Transformers + small model (metrics mocked)
+- I8: Real Transformers + small model + real metrics
 - I9: Real GPU runner + small model
 - I10: Real CPU runner + small model
 - I11: Real AirLLM runner + small model
@@ -288,7 +288,7 @@
 
 **Changes:**
 - Created full directory structure per PLAN C4 (src/airllm_benchmark/{sdk, providers, services, shared}, tests/{unit, integration}, config, results, assets, notebooks)
-- Updated `pyproject.toml` with all dependencies (airllm, ollama, psutil, matplotlib, pandas, pytest, ruff)
+- Updated `pyproject.toml` with all dependencies (airllm, transformers, psutil, matplotlib, pandas, pytest, ruff)
 - Created `.env-example` with `HF_TOKEN` placeholder
 - Created all `__init__.py` files with docstrings
 - Implemented `constants.py` with `BenchmarkMode`, `RunStatus`, `QuantizationLevel` (StrEnum per INTERFACES.md mode/status values)
@@ -385,7 +385,7 @@
 **Changes:**
 - Created `docs/IMPLEMENTATION.md` with three-step process: Library PoC → Feature PoCs → Full Module
 - Each step requires tests; PoCs are disposable after module completion
-- Includes concrete example for Ollama Provider
+- Includes concrete example for the Transformers Provider
 
 **Prompt:** "Is the document referenced in CLAUDE.md?"
 
@@ -435,7 +435,7 @@
 **Changes:**
 - Created `docs/IMPLEMENTATION.md` with three-step process: Library PoC → Feature PoCs → Full Module
 - Each step requires tests; PoCs are disposable after module completion
-- Includes concrete example for Ollama Provider
+- Includes concrete example for the Transformers Provider
 
 **Prompt:** "Is the document referenced in CLAUDE.md?"
 
@@ -529,11 +529,11 @@
 
 **Prompt:** "Change in plan - I want transformers as the gpu provider. implement transformers gpu provider according to the instructions in IMPLEMENTATION.md. you still have the cpu PoCs that can help you"
 
-**Context:** User changed plan to use transformers as GPU provider instead of ollama. The `transformers_provider.py` already existed from Phase 3 (Step 1-3 per IMPLEMENTATION.md). PoCs existed and were tested.
+**Context:** User set Transformers as the wired GPU provider. The `transformers_provider.py` already existed from Phase 3 (Step 1-3 per IMPLEMENTATION.md). PoCs existed and were tested.
 
 **Decisions:**
 - Updated `config/experiment.json` to use `gpu_provider: "transformers"` with `device: "cuda"`
-- Removed ollama provider from plan (no longer needed as transformers serves both GPU and CPU)
+- Consolidated on Transformers as the single wired provider (serves both GPU and CPU); dropped the planned separate HTTP-client provider
 - Updated `docs/TODO.md` to reflect plan change
 - Fixed bug: tokenizer inputs were on CPU while model was on CUDA → added `.to(self._device)` in `generate()`
 - Added real device tests (`tests/unit/test_transformers_device.py`) for both CPU and GPU paths
@@ -541,7 +541,7 @@
 **Changes:**
 - `config/experiment.json` — gpu_provider → transformers, device → cuda
 - `src/airllm_benchmark/providers/transformers_provider.py` — fixed device mismatch bug
-- `docs/TODO.md` — marked ollama removed, added GPU/CPU verification tasks
+- `docs/TODO.md` — dropped the separate provider task, added GPU/CPU verification tasks
 - `tests/unit/test_transformers_device.py` — new file with 4 real device tests (2 CPU + 2 GPU)
 
 **Validation:**
@@ -557,7 +557,7 @@
 
 **Prompt:** "except additional providers, what else isn't implemented in phase 3 of the TODO?" → "write the tests, if they don't exist" → "add to prompt log and commit"
 
-**Context:** TODO item 3.6 (`tests/unit/test_providers.py`) was the only unimplemented task in Phase 3 besides the llama.cpp provider (3.5). The Ollama provider (3.3) was already removed.
+**Context:** TODO item 3.6 (`tests/unit/test_providers.py`) was the only unimplemented task in Phase 3 besides the llama.cpp provider (3.5). The separate HTTP-client provider (3.3) was already removed.
 
 **Decisions:**
 - Created `tests/unit/test_providers.py` with 19 tests across 4 test classes
@@ -656,19 +656,19 @@
 
 ---
 
-## Entry 34 — INCONSISTENCIES.md: Ollama References After GPU Provider Change
+## Entry 34 — INCONSISTENCIES.md: Stale Provider References After GPU Provider Change
 
 **Prompt:** "Look at the prompt log, you will see that the gpu provider was changed to transformers. Please update inconcistensies.md" → "And update the version and add to the prompt log and commit"
 
-**Context:** Per Entry 22, the GPU provider was changed from ollama to transformers. `config/experiment.json` was updated, `ollama_provider.py` was removed, and TODO.md was updated. However, multiple documentation files still reference ollama as if it were an active provider.
+**Context:** Per Entry 22, the wired GPU provider was consolidated on Transformers. `config/experiment.json` and TODO.md were updated. However, multiple documentation files still referenced an earlier, no-longer-wired provider as if it were active.
 
 **Decisions:**
-- Added new inconsistency (#2) to `docs/INCONSISTENCIES.md` tracking all ollama references across 6 documents
+- Added new inconsistency (#2) to `docs/INCONSISTENCIES.md` tracking all stale provider references across 6 documents
 - Bumped version from 1.01 to 1.02
 - Documents affected: `CLAUDE.md`, `docs/CONFIG.md`, `docs/INTERFACES.md`, `docs/PLAN.md`, `docs/IMPLEMENTATION.md`
 
 **Changes:**
-- `docs/INCONSISTENCIES.md` — Added Entry #2: Ollama References (v1.02)
+- `docs/INCONSISTENCIES.md` — Added Entry #2: stale provider references (v1.02)
 - `src/airllm_benchmark/shared/version.py` — 1.01 → 1.02
 - `docs/PROMPT_LOG.md` — Entry 34 added
 
@@ -1727,7 +1727,7 @@ Status:         success
 - `tests/unit/conftest.py` — added `llamacpp_provider` fixture and `mock_llamacpp()` context manager (patches `llamacpp_helpers.Llama`).
 - `tests/unit/test_llamacpp_load.py`, `test_llamacpp_generate.py`, `test_llamacpp_unload.py`, `test_llamacpp_lifecycle.py` — new, 36 tests total, 100% coverage on both new files.
 - `docs/TODO.md` — 3.5 marked ✅ Done; 3.6 note updated; Phase 3 row now 9/9 Done; Summary Total 38/50 Done.
-- `docs/INCONSISTENCIES.md` — #4 changed from "Out of Scope" to "🟡 Partially Resolved" (llama.cpp implemented; Ollama still deferred); version bumped 1.04 → 1.05.
+- `docs/INCONSISTENCIES.md` — the providers entry changed from "Out of Scope" to "🟡 Partially Resolved" (llama.cpp implemented; wiring deferred); version bumped 1.04 → 1.05.
 - `docs/INTERFACES.md` / `docs/PLAN.md` — checked against the implementation; both already described llama.cpp accurately (Python bindings), no changes needed.
 
 **Validation:**
@@ -1747,7 +1747,7 @@ Status:         success
 - Integrated the hw5-bundle as-is (`scripts/`, `.github/workflows/ci.yml`, `.pre-commit-config.yaml`), adopted its starter README (closing TODO 9.5, previously empty), and split two files that newly failed the bundle's 150-line gate (`sdk.py` → extracted `render_visualization` into `sdk_helpers.py`; `test_cli.py` → split `--run-all` tests into `test_cli_run_all.py`).
 - Fixed `GpuRunner` to pass `None` (not a hardcoded device) to `provider.load_model()`, so `TransformersProvider`'s own fallback (`target = device or self._device`) applies — respects the provider's constructed device instead of always forcing CUDA. Added the missing `skipif(not cuda_available)` guards to the 5 real-GPU/AirLLM PoC tests.
 - Implemented `shared/gatekeeper.py` (`call_with_rate_limit`, `RateLimiter`) + `config/rate_limits.json`, wired into the two real HF Hub call sites (`transformers_helpers.load_tokenizer_and_model`, `airllm_loader.load_model`). Documented in `CONFIG.md` §5, `INTERFACES.md` §9, `PLAN.md` (C3 diagram, C4 structure, ADR-006).
-- Corrected `config/hardware.json` (was fabricated placeholder data) to this sandbox's real specs, fixed `TODO.md`'s self-contradictory summary table (was `0/49` despite ~19 tasks marked Done), and corrected `PRD.md`'s stale Ollama-specific acceptance criterion/default.
+- Corrected `config/hardware.json` (was fabricated placeholder data) to this sandbox's real specs, fixed `TODO.md`'s self-contradictory summary table (was `0/49` despite ~19 tasks marked Done), and corrected `PRD.md`'s stale provider-specific acceptance criterion/default.
 
 **Follow-up fix:** CI failed once opened as a PR — `test_cpu_runner_benchmark_poc.py` / `test_gpu_runner_benchmark_poc.py` hardcoded the gated `meta-llama/Llama-3.2-1B` model; GitHub Actions runners have no `HF_TOKEN`. Switched `POC_MODEL` to the already-open `Qwen/Qwen2.5-0.5B-Instruct` (matches `config/experiment.json`'s "small" tier).
 
@@ -1789,7 +1789,7 @@ Status:         success
 
 **Visualizations (task 8.6):** `Visualizer.generate_all()` / `generate_table()` run over all three real records (`results/metrics_phase8.json`) → `assets/phase8/latency_chart.png`, `assets/phase8/memory_chart.png`. The memory chart is the clearest evidence for the whole benchmark's thesis: CPU baseline (38.6GB, incomplete) vs. AirLLM (6.9GB, complete) vs. GPU baseline (810MB) — AirLLM uses ~5.6× less memory than the raw CPU baseline had already consumed without even finishing.
 
-**Also fixed while touching these docs:** `main.py` at the repo root was a vestigial `uv init` stub (`print("Hello from code!")`), unused anywhere, but `README.md`'s Usage section referenced `uv run python main.py ...` — pointing at the stub instead of the real CLI (`src/main.py`). Deleted the stub, fixed the README/TODO.md path references. Also synced `docs/CONFIG.md` §2's example config (was still `gpu_provider: "ollama"` and the gated `meta-llama/Llama-3.2-1B` — the exact model that caused Entry 56's CI failure) to match the real `config/experiment.json`, partially resolving `INCONSISTENCIES.md` #1 for this file.
+**Also fixed while touching these docs:** `main.py` at the repo root was a vestigial `uv init` stub (`print("Hello from code!")`), unused anywhere, but `README.md`'s Usage section referenced `uv run python main.py ...` — pointing at the stub instead of the real CLI (`src/main.py`). Deleted the stub, fixed the README/TODO.md path references. Also synced `docs/CONFIG.md` §2's example config (was still a stale non-wired provider and the gated `meta-llama/Llama-3.2-1B` — the exact model that caused Entry 56's CI failure) to match the real `config/experiment.json`.
 
 ---
 

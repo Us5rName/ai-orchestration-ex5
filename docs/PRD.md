@@ -19,11 +19,11 @@ This project demonstrates AirLLM's value proposition by building a reproducible 
 
 | Scenario                       | Description                                      | Expected Behavior                |
 | ------------------------------ | ------------------------------------------------ | -------------------------------- |
-| **Small model on GPU**         | Model fits in VRAM; any provider (Ollama, Transformers, etc.) | Fast baseline              |
+| **Small model on GPU**         | Model fits in VRAM; via the configured provider (Transformers) | Fast baseline              |
 | **Large model on CPU (raw)**   | Model exceeds available memory; no paging         | OOM or extreme slowness          |
 | **Large model via AirLLM**     | Same oversized model; CPU with paged inference    | Succeeds with latency trade-off  |
 
-The key distinction is whether the model fits in available memory — not which provider is used. Providers such as Ollama, Transformers, and llama.cpp can all target GPU or CPU.
+The key distinction is whether the model fits in available memory — not which provider is used. Providers such as Transformers and llama.cpp can all target GPU or CPU.
 
 ### 1.2 Problem Statement
 
@@ -79,7 +79,7 @@ Students and developers with limited GPU memory (or CPU-only machines) cannot ru
 | --------------- | ------------------------------------------------------------- |
 | **Description** | Provision a `uv`-managed virtual environment with all dependencies |
 | **Input**       | `pyproject.toml` with dependency declarations                 |
-| **Output**      | Functional `.venv` with Ollama client, AirLLM, psutil, pytest |
+| **Output**      | Functional `.venv` with Transformers, AirLLM, psutil, pytest |
 | **Constraints** | Must use `uv` exclusively; no `pip` or `venv` commands         |
 
 ### 3.2 FR-02: GPU Baseline Smoke Test
@@ -96,7 +96,7 @@ Students and developers with limited GPU memory (or CPU-only machines) cannot ru
 | Attribute       | Detail                                                        |
 | --------------- | ------------------------------------------------------------- |
 | **Description** | Attempt to load a model too large for available memory without AirLLM |
-| **Input**       | Large model identifier (e.g., `Qwen2.5-72B-Instruct`)         |
+| **Input**       | Large model identifier (e.g., `Qwen2.5-32B-Instruct`)         |
 | **Output**      | OOM error log, or measurement of extreme slowness             |
 | **Constraints** | Must document the failure mode (crash vs. swap thrashing)     |
 
@@ -174,7 +174,7 @@ Students and developers with limited GPU memory (or CPU-only machines) cannot ru
 ### US-2: GPU Baseline Run
 
 > **As a** researcher,  
-> **I want to** run a small model via Ollama and measure its latency,  
+> **I want to** run a small model on GPU and measure its latency,  
 > **so that** I have a fast baseline for comparison.
 
 ### US-3: Failure Demonstration
@@ -205,17 +205,17 @@ Students and developers with limited GPU memory (or CPU-only machines) cannot ru
 
 | Component | Specification |
 | --------- | ------------- |
-| **CPU**   | *(document actual)* |
-| **GPU**   | *(document actual)* |
-| **RAM**   | *(document actual)* |
-| **Disk**  | *(document actual)* |
-| **OS**    | *(document actual)* |
+| **CPU**   | AMD Ryzen 9 5950X 16-Core Processor |
+| **GPU**   | NVIDIA GeForce RTX 3090 24GB |
+| **RAM**   | 62 GB |
+| **Disk**  | 1629 GB free |
+| **OS**    | Ubuntu 24.04 LTS |
 
 ### 6.2 Hardware Constraints
 
 | Resource    | Requirement                                          |
 | ----------- | ---------------------------------------------------- |
-| **GPU**     | NVIDIA GPU with CUDA support (for Ollama baseline)   |
+| **GPU**     | NVIDIA GPU with CUDA support (for the GPU baseline)  |
 | **RAM**     | Sufficient system RAM for AirLLM paged inference     |
 | **Disk**    | ≥ 20 GB free for model downloads + cache              |
 
@@ -225,12 +225,10 @@ Multiple providers can perform local inference. The chosen provider is configura
 
 | Provider          | GPU Support | CPU Support | Notes                                  |
 | ----------------- | ----------- | ----------- | -------------------------------------- |
-| **Ollama**        | Yes         | Yes         | Local serving; auto-offloads to GPU    |
 | **Transformers**  | Yes         | Yes         | HuggingFace library; direct PyTorch    |
 | **llama.cpp**     | Partial     | Yes         | CPU-optimized; GGUF quantization       |
-| **GPT4All**       | Yes         | Yes         | Local inference with model library     |
 
-> The benchmark selects a provider via `config/experiment.json`. Ollama is the default for the GPU baseline.
+> The benchmark selects a provider via `config/experiment.json`. Transformers is the default (wired) provider for both the GPU and CPU baselines.
 
 ### 6.4 Software Dependencies
 
@@ -238,7 +236,7 @@ Multiple providers can perform local inference. The chosen provider is configura
 | ---------------- | -------------------------------- | ------------------ |
 | `uv`             | Package/environment management   | Latest             |
 | `airllm`         | Paged CPU inference              | Latest stable      |
-| `ollama`         | GPU inference provider (default) | Latest stable      |
+| `transformers`   | GPU/CPU inference provider (wired) | Latest stable    |
 | `psutil`         | Memory/CPU usage monitoring      | ≥ 5.9              |
 | `pytest`         | Test framework                   | ≥ 7.0              |
 | `matplotlib`     | Visualization                    | ≥ 3.7              |
@@ -249,7 +247,6 @@ Multiple providers can perform local inference. The chosen provider is configura
 | Service        | Purpose                    | Authentication     |
 | -------------- | -------------------------- | ------------------ |
 | **Hugging Face** | Model downloads           | HF Token (`.env`)  |
-| **Ollama**     | Local model serving        | None (local)       |
 
 ### 6.6 Out of Scope
 
@@ -270,7 +267,7 @@ Multiple providers can perform local inference. The chosen provider is configura
 | **Medium**    | `Qwen/Qwen2.5-3B-Instruct`       | Fits GPU; good AirLLM comparison target|
 | **Large**     | `Qwen/Qwen2.5-32B-Instruct`      | Exceeds available RAM unquantized (~65.5GB fp16); demonstrates AirLLM value |
 
-> **Selection Rule:** Choose models based on actual available memory for the scenario being tested — VRAM for the GPU baseline, **system RAM** for the CPU-raw baseline (this is the constraint that actually matters for scenario 2; an earlier config used a 7B "large" tier which fit comfortably in RAM even unquantized and would not have demonstrated OOM/slowness at all). The "Large" model must be **> 2× available memory** to guarantee a meaningful failure baseline. Originally illustrated with `meta-llama/Llama-3.2-1B`/`Qwen2.5-72B-Instruct`; switched to all-open Qwen models so no HuggingFace gated-term acceptance is required (see `docs/INCONSISTENCIES.md` #1), and to a 32B "large" tier sized to this benchmark hardware's ~62GB RAM rather than a fixed 72B (which would need ~144GB unquantized — unnecessarily large for the same qualitative demonstration).
+> **Selection Rule:** Choose models based on actual available memory for the scenario being tested — VRAM for the GPU baseline, **system RAM** for the CPU-raw baseline (the constraint that actually matters for scenario 2). The "Large" model must exceed available memory unquantized to guarantee a meaningful failure baseline. The `"large"` tier is `Qwen2.5-32B-Instruct` (~65.5GB unquantized fp16), sized to exceed this benchmark hardware's ~62GB RAM; all tiers are open, ungated Qwen checkpoints, so no HuggingFace gated-term acceptance is required.
 
 ### 7.2 Test Prompts
 
@@ -308,18 +305,10 @@ For each `(model, mode, provider, prompt)` combination:
 
 ## 8. Timeline & Milestones
 
-| Phase | Milestone                              | Estimated Effort | Deliverables                          |
-| ----- | -------------------------------------- | ---------------- | ------------------------------------- |
-| **1** | Project scaffolding & environment      | 1 hour           | `pyproject.toml`, `uv.lock`, `.env`   |
-| **2** | Ollama smoke test                      | 1 hour           | GPU baseline run, metrics             |
-| **3** | Baseline failure demonstration         | 1 hour           | OOM log or slow-run metrics           |
-| **4** | AirLLM inference implementation        | 2 hours          | SDK module, successful run            |
-| **5** | Metrics collection & storage           | 1 hour           | `results/metrics.json`                |
-| **6** | Visualization & analysis notebook      | 2 hours          | Charts in `assets/`, Jupyter notebook |
-| **7** | Tests, linting, documentation          | 2 hours          | ≥85% coverage, zero ruff violations   |
-| **8** | Final review & submission              | 1 hour           | Complete PRD, PLAN, TODO, README      |
-
-**Total Estimated Effort:** ~10 hours
+Actual phase-by-phase progress is tracked in [`docs/TODO.md`](TODO.md) §Summary
+(50/50 tasks complete across 9 phases). No effort estimates are recorded here —
+the benchmark's real, measured cost (compute time and memory) is documented in
+[`docs/AI_USAGE_AND_COST.md`](AI_USAGE_AND_COST.md).
 
 ---
 
@@ -330,7 +319,7 @@ For each `(model, mode, provider, prompt)` combination:
 | GPU unavailable / broken          | Medium     | High   | Use CPU-only baseline; document limitation    |
 | AirLLM compatibility issues       | Low        | High   | Test with small model first; fallback to 8-bit|
 | Model download fails (network)    | Medium     | Medium | Pre-download models; cache locally            |
-| HF token required for gated model | High       | Medium | Use open models (Qwen, Llama-3.2) by default  |
+| HF token required for gated model | High       | Medium | Use open, ungated Qwen models by default      |
 | Insufficient system RAM           | Low        | High   | Reduce model size; use 4-bit quantization     |
 
 ---
@@ -344,5 +333,4 @@ For each `(model, mode, provider, prompt)` combination:
 | **OOM**           | Out Of Memory — error when hardware cannot allocate required memory   |
 | **Quantization**  | Reducing model precision (e.g., 16-bit → 4-bit) to save memory       |
 | **Paged Inference** | Loading model weights on-demand from disk, similar to OS virtual memory |
-| **Ollama**        | Local LLM serving tool; supports both GPU and CPU inference           |
-| **Inference Provider** | Software that executes model inference (Ollama, Transformers, llama.cpp, etc.) |
+| **Inference Provider** | Software that executes model inference (Transformers, llama.cpp) |

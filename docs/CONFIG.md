@@ -16,7 +16,7 @@ Each inference run produces one record appended to the JSON array.
 | `run_id`           | string   | Unique identifier (e.g., `run_001`)            |
 | `model`            | string   | HuggingFace model identifier                   |
 | `mode`             | string   | `"gpu_provider"`, `"cpu_baseline"`, `"airllm"`  |
-| `provider`         | string   | Provider name (e.g., `"ollama"`, `"transformers"`) |
+| `provider`         | string   | Provider name (e.g., `"transformers"`, `"llamacpp"`) |
 | `prompt`           | string   | Input prompt text                              |
 | `prompt_id`        | string   | Prompt identifier (P1, P2, P3)                 |
 | `quantization`     | string   | `"4bit"`, `"8bit"`, or `"none"`                |
@@ -58,7 +58,7 @@ Each inference run produces one record appended to the JSON array.
 }
 ```
 
-> All models are open, ungated Qwen checkpoints — no HuggingFace token or gated-term acceptance is required. `gpu_provider`/`cpu_baseline_provider` are both `"transformers"` (Ollama was removed — see `docs/INCONSISTENCIES.md` #1). The `"large"` tier must exceed available system RAM unquantized to demonstrate the CPU-raw-baseline failure/slowness scenario (see `docs/PRD.md` §7.1's Selection Rule).
+> All models are open, ungated Qwen checkpoints — no HuggingFace token or gated-term acceptance is required. `gpu_provider`/`cpu_baseline_provider` are both `"transformers"`. The `"large"` tier must exceed available system RAM unquantized to demonstrate the CPU-raw-baseline failure/slowness scenario (see `docs/PRD.md` §7.1's Selection Rule).
 
 ### Fields
 
@@ -68,7 +68,7 @@ Each inference run produces one record appended to the JSON array.
 | `prompts`               | object | Named test prompts                                 |
 | `max_new_tokens`        | int    | Token generation limit for all runs                |
 | `quantization`          | string | Quantization level for AirLLM (`"4bit"` / `"8bit"`) |
-| `gpu_provider`          | string | Provider for GPU baseline (e.g., `"ollama"`)       |
+| `gpu_provider`          | string | Provider for GPU baseline (e.g., `"transformers"`) |
 | `cpu_baseline_provider` | string | Provider for CPU baseline (e.g., `"transformers"`) |
 | `provider_config`       | object | Per-provider settings                              |
 

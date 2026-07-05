@@ -65,9 +65,6 @@ jobs:
       - name: Workflow permissions minimal
         run: uv run python scripts/check_workflow_permissions.py
 
-      - name: README generated facts sync
-        run: uv run python scripts/readme_sync.py check
-
       - name: Tests with coverage gate
         run: uv run pytest --cov=airllm_benchmark --cov-report=term-missing --cov-report=html --cov-fail-under=85
 
