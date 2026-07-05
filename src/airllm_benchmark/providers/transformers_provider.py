@@ -39,6 +39,7 @@ class TransformersProvider(InferenceProvider):
         quantization: str = "none",
         on_download_complete: Callable[[], None] | None = None,
     ) -> None:
+        """Store target device, quantization mode, and optional download hook."""
         self._device = device
         self._quantization = quantization
         self._model: PreTrainedModel | None = None

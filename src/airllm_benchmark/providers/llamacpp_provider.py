@@ -30,6 +30,7 @@ class LlamaCppProvider(InferenceProvider):
     """
 
     def __init__(self, device: str = "cpu") -> None:
+        """Store the target device; model loads lazily via ``load_model``."""
         self._device = device
         self._llm: Llama | None = None
         self._model_id: str | None = None
