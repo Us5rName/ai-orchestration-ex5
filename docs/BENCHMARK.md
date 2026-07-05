@@ -108,8 +108,8 @@ A benchmark run is considered **high-quality** when all of the following hold:
 
 | Criterion | Requirement |
 |-----------|-------------|
-| Coverage | Every `(model, mode, prompt)` combination produced a record |
-| Field completeness | All `MetricsRecord` fields populated (non-empty strings, non-null numbers) |
+| **Coverage** | Every `(model, mode, prompt)` combination produced a record |
+| **Field completeness** | All `MetricsRecord` fields populated (non-empty strings, non-null numbers) |
 | Status recorded | Every record has a non-empty `status` (`success`, `oom`, or `timeout`) |
 | Error context | Every failed record includes a descriptive `error` message |
 
@@ -177,7 +177,7 @@ Each visualization below specifies the data, chart type, grouping, and the insig
 | **Insight** | Which mode is fastest per model size; how latency scales with model size |
 | **Annotation** | Mark OOM/timeout bars with a hatch pattern or distinct color; add value labels on bars |
 
-##### V2: Memory Usage Comparison (Grouped Bar Chart)
+##### V2: RAM Usage Comparison (Grouped Bar Chart)
 
 | Aspect | Specification |
 |--------|--------------|
@@ -186,8 +186,20 @@ Each visualization below specifies the data, chart type, grouping, and the insig
 | **Bars per group** | One per mode, color-coded |
 | **Y-axis** | Peak RAM (MB), linear scale |
 | **Grouping** | Grouped by model tier |
-| **Insight** | Which mode consumes most memory; whether AirLLM stays within hardware limits |
+| **Insight** | Which mode consumes most system memory; whether AirLLM stays within hardware limits |
 | **Annotation** | Add a horizontal reference line at the hardware's total RAM capacity; mark OOM runs explicitly |
+
+##### V2b: VRAM Usage Comparison (Grouped Bar Chart)
+
+| Aspect | Specification |
+|--------|--------------|
+| **Data** | `peak_vram_mb` for all successful run combinations |
+| **X-axis** | Model tier (small, medium, large) |
+| **Bars per group** | One per mode, color-coded |
+| **Y-axis** | Peak VRAM (MB), linear scale |
+| **Grouping** | Grouped by model tier |
+| **Insight** | Which mode consumes most GPU memory; whether the model fits in VRAM |
+| **Annotation** | Add a horizontal reference line at the GPU's total VRAM capacity; mark OOM runs explicitly |
 
 ##### V3: Throughput Comparison (Grouped Bar Chart)
 
@@ -229,15 +241,25 @@ Each visualization below specifies the data, chart type, grouping, and the insig
 | **Points** | One per run, colored by mode, sized or labeled by model tier |
 | **Insight** | Trade-off between memory consumption and throughput; whether AirLLM achieves acceptable throughput at lower memory |
 
+##### V7: VRAM vs. Throughput Scatter
+
+| Aspect | Specification |
+|--------|--------------|
+| **Data** | `peak_vram_mb` (x) vs `generation_throughput` (y) for all successful runs |
+| **X-axis** | Peak VRAM (MB) |
+| **Y-axis** | Throughput (tokens/sec) |
+| **Points** | One per run, colored by mode, sized or labeled by model tier |
+| **Insight** | GPU memory–throughput trade-off; whether GPU-bound modes achieve higher throughput at the cost of VRAM |
+
 #### Recommendations
 
-| Guideline | Rationale |
+| **Guideline** | Rationale |
 |-----------|----------|
 | Use consistent color mapping across all charts (e.g., GPU = blue, CPU = orange, AirLLM = green) | Reduces cognitive load when comparing charts |
 | Prefer linear scales over logarithmic unless data spans >2 orders of magnitude | Easier to interpret; log scales hide small but meaningful differences |
 | Add data value labels on bars when there are ≤10 bars per chart | Enables precise comparison without eyeballing |
 | Sort model tiers by size (small → large) on the x-axis | Natural ordering aids comparison |
-| Include a hardware capacity reference line on memory charts | Contextualizes whether usage is feasible |
+| Include a hardware capacity reference line on memory charts (RAM and VRAM) | Contextualizes whether usage is feasible |
 | Separate OOM/timeout from successful runs visually | Failure is data, but shouldn't distort scale comparisons |
 | Generate charts programmatically from `MetricsRecord` data | Ensures charts always reflect the latest results; no manual editing |
 | Save raw data alongside charts (e.g., CSV in `assets/`) | Enables post-hoc analysis or chart regeneration |
@@ -246,10 +268,10 @@ Each visualization below specifies the data, chart type, grouping, and the insig
 
 A good benchmark includes a human-readable summary that:
 
-1. States the hardware environment
-2. Summarizes key findings (which mode was fastest, which consumed most memory)
+1. States the hardware environment (CPU, GPU with VRAM capacity, RAM, OS)
+2. Summarizes key findings (which mode was fastest, which consumed most RAM and VRAM)
 3. Explains the AirLLM trade-off (latency cost vs. feasibility gain)
-4. Notes any anomalies or caveats
+4. Notes any anomalies or caveats (OOM, zero VRAM, empty prompt_id, etc.)
 
 ---
 
