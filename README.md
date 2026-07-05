@@ -222,6 +222,11 @@ modify or redistribute their weights or code:
 [MIT](LICENSE) — this project's own code. Third-party models and libraries listed
 under Attribution above retain their own licenses.
 
+## Authors
+
+- [@evya1](https://github.com/evya1)
+- [@Us5rName](https://github.com/Us5rName)
+
 ## Status & roadmap
 
 All 50 tasks across 9 phases are complete ([`docs/TODO.md`](docs/TODO.md)
