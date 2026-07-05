@@ -207,6 +207,7 @@ When an integration checkpoint fails:
 | ⚠️ | | | | **Caution:** AirLLM with a large model on CPU will be slow. Monitor RAM usage. If system becomes unresponsive, reduce model size or increase quantization. |
 | 8.5 | POC: full benchmark pipeline | 8.4 | ✅ Done | All three real scenarios (GPU baseline, AirLLM, CPU baseline) run end-to-end and persisted to `results/metrics_phase8.json` via `ResultWriter`; no mocks. |
 | 8.6 | Generate visualizations — charts + comparison table | 8.5 | ✅ Done | `Visualizer.generate_all()` / `generate_table()` over `results/metrics_phase8.json` → `assets/phase8/latency_chart.png`, `assets/phase8/memory_chart.png`, and a comparison table. Memory chart is the clearest evidence: CPU baseline (38.6GB, still climbing) vs. AirLLM (6.9GB, complete) vs. GPU baseline (810MB). |
+| 8.7 | Run GPU baseline — medium model (3B) | 8.2 | ✅ Done | `Qwen/Qwen2.5-3B-Instruct` GPU baseline via Transformers (P1/P2/P3 unquantized): average runtime 5.47s, 32 tokens per prompt, 5.8 tok/s average throughput. Peak RAM 4.6 GB average, peak VRAM ~3.2 GB. Recorded in `results/metrics_medium.json`. Visualizations in `assets/medium/latency_chart.png`, `assets/medium/memory_chart.png`. **Rationale:** PRD.md §4.3 names the medium tier a "good AirLLM comparison target"; it was cached (task 7.2) but never benchmarked until now. Results added to README Results table. |
 
 ---
 
