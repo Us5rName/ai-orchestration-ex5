@@ -22,7 +22,7 @@ from disk; this repo measures exactly what that buys you — and what it costs.
 - [How a benchmark run works](#how-a-benchmark-run-works)
 - [Configuration at a glance](#configuration-at-a-glance)
 - [Results](#results)
-  - [RTX 4080 SUPER Benchmark (2026-07-06)](#rtx-4080-super-benchmark-2026-07-06)
+  - [RTX 4080 SUPER Benchmark](#rtx-4080-super-benchmark)
   - [RTX 3090 Benchmark](#rtx-3090-benchmark)
 - [Cost](#cost)
 - [Quick start](#quick-start)
@@ -132,8 +132,10 @@ uv run --config-dir config/rtx-4080-pc --report results/run_20260706_135457
 
 **Hardware:** AMD Ryzen 9 7900 (12-core, Zen 4) · RTX 4080 SUPER 16GB VRAM · 32 GB RAM · Fedora Linux 44
 
-**Configuration:** `max_new_tokens=16` (chosen due to AirLLM's slow paged decoding), `quantization=none`, provider=`transformers`.
+**Configuration:** `max_new_tokens=16` (chosen due to AirLLM's slow paged decoding), `quantization=none`, provider=`transformers` (chosen for both GPU and CPU modes).
 TTFT excludes model load time.
+
+This benchmark demonstrates the memory-vs-latency trade-off across three inference modes. The small and medium models fit comfortably in GPU VRAM, establishing a fast baseline. The large 7B model exceeds the GPU's 16 GB VRAM during generation, forcing a comparison between raw CPU inference (high RAM, moderate speed) and AirLLM's paged approach (low RAM, high latency). The results show exactly what each mode buys you — and what it costs.
 
 #### Summary Table (averaged across 3 prompts)
 
