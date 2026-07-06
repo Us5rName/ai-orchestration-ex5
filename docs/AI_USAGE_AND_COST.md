@@ -89,15 +89,15 @@ transcripts in `~/.claude/projects/-root-ai-orchestration-ex5/` via
 message, spanning all sessions and sub-agents used to build this project.
 
 **Sessions (top-level + subagent):** 16  
-**Date range:** 2026-07-04T21:31:31Z → 2026-07-05T23:43:02Z
+**Date range:** 2026-07-04T21:31:31Z → 2026-07-06T00:27:25Z
 
 | Model | Messages | Input Tokens | Output Tokens | Cache Creation | Cache Read |
 |-------|----------|--------------|---------------|-----------|-----------|
 | claude-fable-5 | 32 | 15,205 | 28,703 | 255,842 | 1,098,093 |
 | claude-haiku-4-5-20251001 | 861 | 4,941 | 204,962 | 1,465,400 | 54,723,226 |
 | claude-opus-4-8 | 340 | 62,990 | 324,915 | 941,243 | 42,223,670 |
-| claude-sonnet-5 | 3,495 | 20,425 | 1,616,857 | 10,901,342 | 673,896,952 |
-| **TOTAL** | 4,728 | 103,561 | 2,175,437 | 13,563,827 | 771,941,941 |
+| claude-sonnet-5 | 4,214 | 24,133 | 1,922,861 | 12,968,997 | 743,950,794 |
+| **TOTAL** | 5,447 | 107,269 | 2,481,441 | 15,631,482 | 841,995,783 |
 
 > **Billing model reminder.** All sessions ran under plan-metered (subscription)
 > billing, which carries no per-token charge. No dollar cost is computed or
