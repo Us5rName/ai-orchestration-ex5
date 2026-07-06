@@ -1,0 +1,4 @@
+run_id,model,mode,provider,prompt,prompt_id,quantization,max_new_tokens,load_time_s,ttft_s,total_runtime_s,tokens_generated,generation_throughput,peak_ram_mb,peak_vram_mb,status,error,timestamp,tier
+run_7f5df8ff1e80,Qwen/Qwen2.5-0.5B-Instruct-GGUF::qwen2.5-0.5b-instruct-q4_k_m.gguf,gpu_provider,llamacpp,What is the capital of the United States?,,none,32,0.8354,0.0,6.5736,32,5.58,1113.81,0.0,success,,2026-07-05T23:47:03.773219+00:00,small
+run_7f5e08ede750,Qwen/Qwen2.5-0.5B-Instruct-GGUF::qwen2.5-0.5b-instruct-q4_k_m.gguf,gpu_provider,llamacpp,Explain quantum entanglement in one paragraph.,,none,32,0.3922,0.0,5.1094,32,6.78,1115.22,0.0,success,,2026-07-05T23:47:09.890606+00:00,small
+run_7f5df93309e0,Qwen/Qwen2.5-0.5B-Instruct-GGUF::qwen2.5-0.5b-instruct-q4_k_m.gguf,gpu_provider,llamacpp,Write a Python function that sorts a list.,,none,32,0.3906,0.0,0.8371,32,71.67,650.95,0.0,success,,2026-07-05T23:47:11.021208+00:00,small

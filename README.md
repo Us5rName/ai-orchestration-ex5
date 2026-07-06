@@ -120,7 +120,7 @@ All tunable values live in `config/` — zero hardcoding
 
 ## Results
 
-### RTX 4080 SUPER Benchmark (2026-07-06)
+### RTX 4080 SUPER Benchmark
 
 Full benchmark run on an NVIDIA RTX 4080 SUPER 16GB system. 27 run combinations
 (3 models × 3 modes × 3 prompts) executed via:
@@ -278,8 +278,11 @@ Actual measured results from an NVIDIA RTX 3090 24GB system (see
 
 ![Latency comparison](assets/phase8/latency_chart.png)
 ![Memory comparison](assets/phase8/memory_chart.png)
-![llama.cpp latency](assets/llamacpp/latency_chart.png)
-![llama.cpp memory](assets/llamacpp/memory_chart.png)
+
+
+And for llama cpp:
+![llama.cpp latency](assets/report_llamacpp/latency_by_mode.png)
+![llama.cpp memory](assets/report_llamacpp/memory_by_mode.png)
 
 \* The llama.cpp row resolves [`docs/TODO.md`](docs/TODO.md) task 10.1 — the
 provider was fully implemented and unit-tested but never actually
