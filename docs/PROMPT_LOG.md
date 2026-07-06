@@ -1793,4 +1793,22 @@ Status:         success
 
 ---
 
+## Entry 59 — llama.cpp provider benchmark (resolves TODO 10.1)
+
+**Prompt:** Find an experiment in the repo's own docs that's described as ready/possible but never actually run, plan it on a dedicated branch, execute it, and document it in the README.
+
+**Found:** `docs/TODO.md` task 10.1 — `LlamaCppProvider` was fully implemented, gatekeeper-wired, and unit-tested (36 tests, 100% coverage) but never exercised end-to-end: no config, script, or committed result ever selected it (`gpu_provider`/`cpu_baseline_provider` were hardcoded `"transformers"` everywhere). Status was `🔄 Pending decision`.
+
+**Decision:** Expose it as an opt-in comparison run, not a config default. Added `models.small_gguf` to `config/experiment.json` (official `Qwen/Qwen2.5-0.5B-Instruct-GGUF`, `qwen2.5-0.5b-instruct-q4_k_m.gguf` — confirmed via web search, matches the existing `"repo_id::filename"` convention). New `scripts/run_llamacpp_benchmark.py` calls `BenchmarkSDK.run_single(model_id="small_gguf", mode="gpu_provider", provider="llamacpp", ...)` — `run_single`'s `provider` override already existed (`sdk/sdk.py:80`), so no runner/provider code changes were needed. Unlike `run_medium_benchmark.py`/`run_param_sweep.py` (TODO 10.2/10.3, still open — out of scope here), this script routes through `ResultWriter` and `Visualizer` properly instead of hand-rolling JSON/chart output.
+
+**Environment gotcha (real, not glossed over):** `provider_config.llamacpp.device` is `"cuda"`, but the `llama-cpp-python` wheel installed by `uv sync` from PyPI has no CUDA backend — `n_gpu_layers` had no effect and inference silently ran on CPU (confirmed via `verbose=True`: no `ggml_cuda_init` line, `peak_vram_mb` stayed `0.0` across all runs). Tried swapping to a CUDA-enabled prebuilt wheel from `abetlen.github.io/llama-cpp-python/whl/cu124` — it loaded (`ggml_cuda_init: found 1 CUDA devices`, needed `LD_LIBRARY_PATH` pointed at torch's bundled `libcudart`/`libcublas` since the wheel doesn't vendor them) but crashed with `SIGILL` (exit 132) on first inference, most likely an AVX512 kernel path baked into that prebuilt wheel that this CPU (AVX2/FMA, no AVX512) can't execute. Reverted to the working PyPI CPU wheel (`uv pip install --force-reinstall --no-deps llama-cpp-python==0.3.32`) rather than chase a from-source CUDA build (no `nvcc` toolchain installed, only runtime libs). Documented the CPU-only result honestly in the README row (`0 MB*` peak VRAM with a footnote) instead of mislabeling it as a GPU run.
+
+**Results (real, 3 runs, small tier, CPU execution):** load 0.39–0.84s, total runtime 0.84–6.57s, throughput 5.6–71.7 tok/s (wide variance — shared sandbox CPU contention), peak RAM 0.65–1.12GB, peak VRAM 0MB. All `status: success`. Raw data: `results/metrics_llamacpp.json`; charts: `assets/llamacpp/{latency,memory}_chart.png`.
+
+**Changes:** `config/experiment.json` (+`small_gguf` model), `docs/CONFIG.md` §2 (documented the new entry), `scripts/run_llamacpp_benchmark.py` (new), `docs/TODO.md` (10.1 → ✅ Resolved), `README.md` (Results row, Providers/backends row, Status & roadmap bullet). Branch: `feat/llamacpp-provider-benchmark`.
+
+**Validation:** `ruff check scripts/run_llamacpp_benchmark.py` clean; `check_line_cap.py scripts --limit 150 --mode logical` passes; script run twice end-to-end producing real, non-fabricated `MetricsRecord`s both times (once accidentally on the broken CUDA wheel — discarded — once cleanly on the working CPU wheel, which is what's committed).
+
+---
+
 ## Summary of Documents
