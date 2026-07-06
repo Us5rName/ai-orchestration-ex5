@@ -13,6 +13,7 @@ from airllm_benchmark.services.metrics import MetricsRecord
 if TYPE_CHECKING:
     from airllm_benchmark.sdk.sdk_validation import ValidationResult
     from airllm_benchmark.services.report_builder import ReportResult
+    from airllm_benchmark.services.visualizer import VisualizationResult
 
 
 def print_result(record: MetricsRecord) -> None:
@@ -126,4 +127,22 @@ def print_report_result(result: ReportResult) -> None:
     print(f"  CSV: {result.csv_path}")
     if result.chart_paths:
         print(f"  Charts: {', '.join(result.chart_paths)}")
+    print(sep)
+
+
+def print_visualization_result(result: VisualizationResult) -> None:
+    """Print chart paths and comparison table from generate_visualization().
+
+    Args:
+        result: VisualizationResult from ``BenchmarkSDK.generate_visualization()``.
+    """
+    sep = "=" * 60
+    print(sep)
+    print("  Visualization")
+    print(sep)
+    print(result.table_text)
+    if result.chart_paths:
+        print(f"\nCharts: {', '.join(result.chart_paths)}")
+    else:
+        print("\nCharts: (none — no records to visualize)")
     print(sep)

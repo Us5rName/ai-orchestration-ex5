@@ -46,7 +46,8 @@ column: `tier` (`"small"`/`"medium"`/`"large"`/`"unknown"`, resolved from
   "models": {
     "small": { "id": "Qwen/Qwen2.5-0.5B-Instruct", "tier": "small" },
     "medium": { "id": "Qwen/Qwen2.5-3B-Instruct", "tier": "medium" },
-    "large": { "id": "Qwen/Qwen2.5-32B-Instruct", "tier": "large" }
+    "large": { "id": "Qwen/Qwen2.5-32B-Instruct", "tier": "large" },
+    "small_gguf": { "id": "Qwen/Qwen2.5-0.5B-Instruct-GGUF::qwen2.5-0.5b-instruct-q4_k_m.gguf", "tier": "small" }
   },
   "prompts": {
     "P1": "What is the capital of the United States?",
@@ -58,12 +59,13 @@ column: `tier` (`"small"`/`"medium"`/`"large"`/`"unknown"`, resolved from
   "gpu_provider": "transformers",
   "cpu_baseline_provider": "transformers",
   "provider_config": {
-    "transformers": { "device": "cuda" }
+    "transformers": { "device": "cuda" },
+    "llamacpp": { "device": "cuda" }
   }
 }
 ```
 
-> All models are open, ungated Qwen checkpoints — no HuggingFace token or gated-term acceptance is required. `gpu_provider`/`cpu_baseline_provider` are both `"transformers"`. The `"large"` tier must exceed available system RAM unquantized to demonstrate the CPU-raw-baseline failure/slowness scenario (see `docs/PRD.md` §7.1's Selection Rule).
+> All models are open, ungated Qwen checkpoints — no HuggingFace token or gated-term acceptance is required. `gpu_provider`/`cpu_baseline_provider` are both `"transformers"`. The `"large"` tier must exceed available system RAM unquantized to demonstrate the CPU-raw-baseline failure/slowness scenario (see `docs/PRD.md` §7.1's Selection Rule). `"small_gguf"` is the official Qwen GGUF release of the small tier (q4_k_m quant), used only for the opt-in llama.cpp provider comparison run (`scripts/run_llamacpp_benchmark.py`) via `BenchmarkSDK.run_single(..., provider="llamacpp")` — it is not part of the default `gpu_provider`/`cpu_baseline_provider` matrix.
 
 ### Fields
 

@@ -128,9 +128,22 @@ Actual measured results from this repo's own hardware (see
 | GPU baseline | Qwen2.5-3B (unquantized) | ~0.3s / ~3s | ~5.47s (avg) | 5.8 tok/s (avg) | 4.6 GB (avg) | ~3.2 GB | ✅ success |
 | AirLLM (paged, 4-bit) | Qwen2.5-32B (~65.5GB unquantized) | 604.31s | 1069.60s | 0.1 tok/s | 6.9 GB | 1.9 GB | ✅ success |
 | CPU baseline (raw, unquantized) | Qwen2.5-32B | — (never finished loading) | 900s (killed) | — | 38.6 GB (climbing) | n/a | ⏱️ timeout |
+| llama.cpp (GGUF, q4_k_m) | Qwen2.5-0.5B-Instruct (small tier) | 0.54s (avg) / — | 4.17s (avg) | 28.0 tok/s (avg) | 0.96 GB (avg) | 0 MB* | ✅ success |
 
 ![Latency comparison](assets/phase8/latency_chart.png)
 ![Memory comparison](assets/phase8/memory_chart.png)
+![llama.cpp latency](assets/llamacpp/latency_chart.png)
+![llama.cpp memory](assets/llamacpp/memory_chart.png)
+
+\* The llama.cpp row resolves [`docs/TODO.md`](docs/TODO.md) task 10.1 — the
+provider was fully implemented and unit-tested but never actually
+benchmarked. It's an opt-in comparison run (`scripts/run_llamacpp_benchmark.py`,
+`provider="llamacpp"` explicitly passed to `BenchmarkSDK.run_single`), not part
+of the default GPU/CPU/AirLLM matrix. On this machine the installed
+`llama-cpp-python` wheel has no CUDA backend (a CUDA-enabled prebuilt wheel
+crashed with `SIGILL`, likely an AVX512/CPU-microarch mismatch), so despite
+`provider_config.llamacpp.device = "cuda"` these runs executed on CPU — hence
+`0 MB` peak VRAM. Raw numbers: `results/metrics_llamacpp.json`.
 
 The AirLLM row is the whole point: a model that needs **~65.5GB unquantized**
 runs in **~6.9GB of RAM** via paging — at the cost of ~18 minutes to answer one
@@ -181,7 +194,7 @@ Both GPU and CPU baseline runners are provider-configurable via
 | --- | --- | --- |
 | **Transformers** | ✅ Wired (default) | HuggingFace `AutoModel*`; GPU and CPU targets; bitsandbytes 4-bit |
 | **AirLLM** | ✅ Builtin runner | Layer-by-layer paged inference for the large-model scenario |
-| **llama.cpp** | ✅ Wired (opt-in) | `LlamaCppProvider` is complete, unit-tested (36 tests, 100% coverage), and registered in `create_provider()` — select via `gpu_provider` or `cpu_baseline_provider` in config |
+| **llama.cpp** | ✅ Wired & benchmarked (opt-in) | `LlamaCppProvider` is complete, unit-tested (36 tests, 100% coverage), registered in `create_provider()`, and now has a real comparison run (`scripts/run_llamacpp_benchmark.py` → `results/metrics_llamacpp.json`) — select via `gpu_provider`/`cpu_baseline_provider` in config, or pass `provider="llamacpp"` directly to `BenchmarkSDK.run_single()` |
 
 ## Quality gates
 
@@ -257,6 +270,12 @@ All 50 tasks across 9 phases are complete ([`docs/TODO.md`](docs/TODO.md)
 - ✅ **Medium-tier GPU baseline** — 3B model GPU execution added (P1/P2/P3,
   unquantized). Results in [`results/metrics_medium.json`](results/metrics_medium.json).
   Charts in [`assets/medium/`](assets/medium/).
+- ✅ **llama.cpp provider benchmark** — resolves [`docs/TODO.md`](docs/TODO.md)
+  task 10.1 (provider was implemented/tested but never run). Small-tier
+  (Qwen2.5-0.5B, official GGUF q4_k_m) comparison run added via
+  `scripts/run_llamacpp_benchmark.py`. Results in
+  [`results/metrics_llamacpp.json`](results/metrics_llamacpp.json). Charts in
+  [`assets/llamacpp/`](assets/llamacpp/).
 
 ## Repository facts
 
