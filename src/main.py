@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from airllm_benchmark.cli_dispatch import add_report_arguments, run_report
+from airllm_benchmark import cli_dispatch as _dispatch
 from airllm_benchmark.cli_printers import (
     print_result,
     print_run_all_result,
@@ -73,7 +73,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Optional config directory override.",
     )
-    add_report_arguments(parser)
+    _dispatch.add_report_arguments(parser)
+    _dispatch.add_visualize_arguments(parser)
     return parser.parse_args(argv)
 
 
@@ -135,7 +136,10 @@ def main(argv: list[str] | None = None) -> None:
         return
 
     if args.report:
-        run_report(args)
+        _dispatch.run_report(args)
+        return
+    if args.visualize:
+        _dispatch.run_visualize(args)
         return
 
     # Default: show help when no flag provided
