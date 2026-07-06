@@ -1,0 +1,10 @@
+{
+  "cpu": "AMD Ryzen 9 7900 (12-core, Zen 4)",
+  "gpu": "NVIDIA GeForce RTX 4080 SUPER 16GB",
+  "ram_gb": 32,
+  "vram_gb": 16,
+  "disk_free_gb": 520,
+  "os": "Fedora Linux 44 (Forty Four)",
+  "documented_by": "zed-agent",
+  "documented_at": "2026-07-06T00:00:00+00:00"
+}
