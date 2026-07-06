@@ -330,6 +330,12 @@ uv run python src/main.py --run-all      # full three-mode benchmark
 uv run python src/main.py --single --mode airllm --model small
 ```
 
+**Custom config directory:** Use `--config-dir` to point to an alternative config folder (e.g., `config/rtx-4080-pc`). This overrides the default `config/` directory and is useful for running benchmarks on different hardware or with different experiment parameters:
+
+```sh
+uv run python src/main.py --config-dir config/rtx-4080-pc --run-all
+```
+
 Results are written to `results/metrics.json`; charts and the comparison table
 land in `assets/`. The analysis is in
 [`notebooks/analysis.ipynb`](notebooks/analysis.ipynb).
