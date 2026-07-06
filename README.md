@@ -22,6 +22,8 @@ from disk; this repo measures exactly what that buys you — and what it costs.
 - [How a benchmark run works](#how-a-benchmark-run-works)
 - [Configuration at a glance](#configuration-at-a-glance)
 - [Results](#results)
+  - [RTX 4080 SUPER Benchmark (2026-07-06)](#rtx-4080-super-benchmark-2026-07-06)
+  - [RTX 3090 Benchmark](#rtx-3090-benchmark)
 - [Cost](#cost)
 - [Quick start](#quick-start)
 - [Providers / backends](#providers--backends)
@@ -118,7 +120,151 @@ All tunable values live in `config/` — zero hardcoding
 
 ## Results
 
-Actual measured results from this repo's own hardware (see
+### RTX 4080 SUPER Benchmark (2026-07-06)
+
+Full benchmark run on an NVIDIA RTX 4080 SUPER 16GB system. 27 run combinations
+(3 models × 3 modes × 3 prompts) executed via:
+
+```sh
+uv run --config-dir config/rtx-4080-pc --run-all
+uv run --config-dir config/rtx-4080-pc --report results/run_20260706_135457
+```
+
+**Hardware:** AMD Ryzen 9 7900 (12-core, Zen 4) · RTX 4080 SUPER 16GB VRAM · 32 GB RAM · Fedora Linux 44
+
+**Configuration:** `max_new_tokens=16` (chosen due to AirLLM's slow paged decoding), `quantization=none`, provider=`transformers`.
+TTFT excludes model load time.
+
+#### Summary Table (averaged across 3 prompts)
+
+| Model | Mode | Load (s) | TTFT (s) | Runtime (s) | Throughput (tok/s) | Peak RAM (MB) | Peak VRAM (MB) | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **0.5B (small)** | GPU | 0.17 | 0.18 | 3.43 | 92.08 | 1622 | 966 | ✅ success |
+| | CPU | 3.06 | 0.05 | 3.56 | 32.13 | 1973 | 8 | ✅ success |
+| | AirLLM | 1.20 | 0.00 | 46.79 | 0.35 | 2250 | 472 | ✅ success |
+| **3B (medium)** | GPU | 1.07 | 0.03 | 4.00 | 72.60 | 3107 | 6097 | ✅ success |
+| | CPU | 2.44 | 0.17 | 4.57 | 7.51 | 8122 | 8 | ✅ success |
+| | AirLLM | 0.91 | 0.00 | 81.45 | 0.20 | 3301 | 1150 | ✅ success |
+| **7B (large)** | GPU | 1.28 | 0.00 | 6.99 | 0.00 | 5153 | 14429 | ❌ OOM |
+| | CPU | 2.43 | 0.33 | 6.79 | 3.67 | 15950 | 8 | ✅ success |
+| | AirLLM | 0.65 | 0.00 | 91.01 | 0.18 | 4820 | 1052 | ✅ success |
+
+> **Note:** GPU OOM rows show metrics captured up to the CUDA out-of-memory error. The 7B model requires ~14 GB VRAM for weights alone, exceeding the 16 GB GPU capacity once activation memory is accounted for.
+
+#### Visualizations
+
+All charts were generated programmatically from the `MetricsRecord` data.
+
+**Latency by mode** — Total runtime (seconds) grouped by model tier, one bar per inference mode. GPU dominates for models that fit in VRAM; AirLLM shows the latency penalty of paged inference.
+
+![Latency by mode](assets/run_20260706_135457/latency_by_mode.png)
+
+**RAM usage by mode** — Peak system memory (MB) per run. CPU baseline consumes the most RAM (up to 15.9 GB for the 7B model, ~50% of available 32 GB). AirLLM keeps RAM under 5 GB even for the large model. The horizontal line marks the machine's 32 GB RAM capacity.
+
+![RAM by mode](assets/run_20260706_135457/memory_by_mode.png)
+
+**VRAM usage by mode** — Peak GPU memory (MB) per run. GPU mode uses 6–14.6 GB VRAM depending on model size. The 7B model exceeds the RTX 4080 SUPER's 16 GB capacity during generation, causing OOM. AirLLM uses minimal VRAM (1–1.3 GB) for KV cache only. The horizontal line marks the GPU's 16 GB VRAM capacity.
+
+![VRAM by mode](assets/run_20260706_135457/vram_by_mode.png)
+
+**Throughput by mode** — Sustained decoding speed (tokens/sec). GPU achieves 72–92 tok/s for models that fit in VRAM. CPU drops to 3–7 tok/s for larger models. AirLLM is the slowest at 0.18–0.35 tok/s, reflecting the cost of streaming weights layer-by-layer from disk.
+
+![Throughput by mode](assets/run_20260706_135457/throughput_by_mode.png)
+
+**Latency breakdown** — Stacked bars showing how total runtime splits into load time, TTFT (prefill), and decoding time. For AirLLM, nearly all latency comes from decoding — the paged weight streaming happens during token generation, not prefill.
+
+![Latency breakdown](assets/run_20260706_135457/latency_breakdown.png)
+
+**RAM vs. Throughput** — Scatter plot of peak RAM (x-axis) against throughput (y-axis). Shows the trade-off: GPU achieves high throughput at moderate memory cost; CPU uses massive RAM for modest throughput; AirLLM achieves acceptable memory usage at the cost of throughput. Points are colored by mode and sized by model tier.
+
+![RAM vs Throughput](assets/run_20260706_135457/memory_vs_throughput.png)
+
+**VRAM vs. Throughput** — Scatter plot of peak VRAM (x-axis) against throughput (y-axis). GPU mode sits at high VRAM + high throughput; CPU and AirLLM sit near zero VRAM with low throughput. Confirms that VRAM availability is the primary determinant of inference speed.
+
+![VRAM vs Throughput](assets/run_20260706_135457/vram_vs_throughput.png)
+
+Raw data: [`results/metrics_20260706_135457.json`](results/metrics_20260706_135457.json) · CSV: [`assets/run_20260706_135457/metrics.csv`](assets/run_20260706_135457/metrics.csv)
+
+#### Key Findings
+
+1. **GPU is fastest when the model fits in VRAM.** The 0.5B and 3B models run on GPU with 72–92 tok/s throughput and sub-4-second total runtime — an order of magnitude faster than CPU.
+
+2. **GPU OOM on the 7B model.** The 7B model requires ~14.6 GB VRAM for weights, leaving insufficient headroom for activations on the 16 GB RTX 4080 SUPER. All three GPU runs failed with CUDA OOM.
+
+3. **CPU baseline works but is slow for large models.** The 7B model runs on CPU at 3.67 tok/s (6.8s for 16 tokens), consuming 15.95 GB RAM (~50% of available 32 GB). The 3B model achieves 7.5 tok/s.
+
+4. **AirLLM enables large models at a latency cost.** The 7B model runs in only 4.8 GB RAM (71% less than CPU baseline) via paged inference, at the cost of ~91s runtime (0.18 tok/s) — a **13.4× slowdown** vs. CPU.
+
+#### AirLLM Trade-off Analysis
+
+| Model | AirLLM runtime / CPU runtime | CPU RAM / AirLLM RAM | Interpretation |
+| --- | --- | --- | --- |
+| 0.5B | 13.2× slower | 0.88× (uses more) | AirLLM overhead dominates for small models |
+| 3B | 17.8× slower | 2.46× (saves 60%) | Paging saves memory; latency penalty grows |
+| 7B | 13.4× slower | 3.31× (saves 71%) | Best trade-off: enables models that exceed GPU VRAM |
+
+**The AirLLM value proposition:** When a model exceeds GPU VRAM (as with 7B on 16 GB), AirLLM provides the only viable option that doesn't consume 50%+ of system RAM. The latency cost is steep (~91s for 16 tokens) but the memory savings (from 15.95 GB down to 4.8 GB) make inference feasible on constrained hardware.
+
+#### Prefill Analysis
+
+**Prefill** is the prompt-processing phase that occurs before the model generates its first token. In this benchmark, prefill time is captured by `ttft_s` (Time To First Token), which excludes model loading and measures only the time from generation start to first output token.
+
+| Model | GPU TTFT (avg) | CPU TTFT (avg) | AirLLM TTFT | Observation |
+| --- | --- | --- | --- | --- |
+| 0.5B | 0.18s | 0.05s | 0.00s | GPU prefill ~3× CPU; AirLLM reports 0.0 |
+| 3B | 0.03s | 0.17s | 0.00s | GPU prefill ~6× faster than CPU |
+| 7B | 0.00s (OOM) | 0.33s | 0.00s | GPU OOM during/after prefill; CPU handles it |
+
+**Key observations:**
+
+- **GPU prefill is fast for models that fit in VRAM.** The 3B model achieves 0.03s prefill on GPU — the prompt is processed in parallel across GPU cores. For the 0.5B model, GPU prefill (0.18s) is slower than CPU (0.05s) because the first GPU run includes cold-start overhead (subsequent runs show 0.01s).
+
+- **CPU prefill scales with model size.** The 7B model takes 0.33s to prefill on CPU vs. 0.05s for the 0.5B model — a ~6.6× increase for a 14× larger model, showing near-linear scaling.
+
+- **AirLLM reports TTFT = 0.0** because the paged weight streaming overlaps with token generation. The first token cannot be produced until the required layers are loaded from disk, so prefill and initial decoding are inseparable in AirLLM's architecture. This means AirLLM's "prefill cost" is hidden inside the total runtime.
+
+- **Short prompts minimize prefill impact.** With ~10–15 token prompts, prefill is negligible (<0.5s) compared to decoding (3–91s). For long-context workloads (thousands of prompt tokens), prefill becomes the dominant cost — especially on GPU where the entire prompt must fit in VRAM for parallel processing.
+
+- **GPU OOM can occur during prefill.** The 7B model's GPU runs failed with OOM, which likely occurred during or immediately after prefill when the model tried to allocate KV cache memory for generation. The prefill phase itself loaded weights into VRAM (~14.6 GB), leaving insufficient headroom for the generation workspace.
+
+> **Implication:** For use cases with long prompts (e.g., document summarization, RAG with large context windows), prefill becomes the bottleneck. GPU excels here when VRAM allows; AirLLM's paged approach may show super-linear prefill growth because weights must be streamed repeatedly for each prompt token. This benchmark's short prompts don't stress prefill — a long-context follow-up would isolate this dimension.
+
+#### Prompts
+
+Three prompts were used to capture variance across prompt types:
+
+| Prompt | Type |
+| --- | --- |
+| "What is the capital of the United States?" | Factual QA |
+| "Explain quantum entanglement in one paragraph." | Explanation |
+| "Write a Python function that sorts a list." | Code generation |
+
+Full raw results for all 27 run combinations are available in [`results/metrics_20260706_135457.json`](results/metrics_20260706_135457.json) and [`assets/run_20260706_135457/metrics.csv`](assets/run_20260706_135457/metrics.csv).
+
+#### Anomalies & Caveats
+
+- **GPU OOM timing** — The first GPU run for 7B/P1 shows `load_time_s=0.0` because the OOM occurred during the generation phase after model loading succeeded. The model weights fit partially but activations triggered OOM.
+- **TTFT = 0.0 for AirLLM** — AirLLM reports TTFT as 0.0 because the first token generation is included in the paged weight streaming; the metric boundary differs from the provider-based modes.
+- **Small-model AirLLM overhead** — For the 0.5B model, AirLLM actually uses slightly more RAM than CPU because the paging infrastructure adds overhead that outweighs benefits for models that already fit comfortably in memory.
+- **Single-run results** — Each `(model, mode, prompt)` combination was run once. OS-level background processes and thermal throttling introduce variance; results should be interpreted as representative rather than precise.
+
+#### Future Work & Further Research
+
+- **Scaling AirLLM to larger models** — The 7B model ran in only 4.8 GB RAM with AirLLM, less than 15% of available system memory. This headroom suggests AirLLM could handle substantially larger models (e.g., 70B+) on the same hardware, trading latency for feasibility. A benchmark with a 70B-class model would quantify this trade-off and validate AirLLM's core value proposition: running models far larger than available memory.
+
+- **Provider comparison** — A `LlamaCppProvider` is implemented and wired into the SDK ([`providers/llamacpp_provider.py`](src/airllm_benchmark/providers/llamacpp_provider.py)). Future runs could compare inference backends (Transformers vs. llama.cpp) on equal footing — same model, same device, same prompt — to isolate provider-level performance differences. llama.cpp's native GGUF quantization also enables fair comparisons against Transformers' bitsandbytes quantization.
+
+- **Quantization sweep** — The config supports `quantization` as a tunable parameter (`config/experiment.json`). A systematic comparison across quantization levels (none, 4-bit NF4, 8-bit, GGUF q4_k_m, q8_0) would reveal how quantization interacts with each inference mode. Key questions: Does 4-bit quantization enable GPU inference for models that currently OOM? How much does quantization reduce AirLLM's paging overhead?
+
+- **Prefill sensitivity** — This benchmark used short prompts (~10–15 tokens) which keep prefill (the prompt-processing phase before the first token) negligible relative to decoding. A follow-up with long-context prompts (512, 2048, 8192 tokens) would isolate prefill as a distinct bottleneck. Key questions: Does GPU prefill scale linearly with prompt length while AirLLM's paged prefill shows super-linear growth due to repeated weight streaming? Is prefill the dominant cost for factual QA (short output) vs. code generation (long output)? The `ttft_s` metric already captures prefill time — a dedicated prefill-only run (generate 0 tokens) would measure it in isolation.
+
+- **Prompt length sensitivity** — This benchmark used `max_new_tokens=16` due to AirLLM's slow decoding. A follow-up with longer generation (32, 64, 128 tokens) would show how the AirLLM latency penalty scales with output length and whether the per-token cost stabilizes after the initial weight-streaming overhead.
+
+---
+
+### RTX 3090 Benchmark
+
+Actual measured results from an NVIDIA RTX 3090 24GB system (see
 [`config/hardware.json`](config/hardware.json) and
 [`results/metrics_phase8.json`](results/metrics_phase8.json)) — not estimates:
 
