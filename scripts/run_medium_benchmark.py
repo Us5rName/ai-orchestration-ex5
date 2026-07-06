@@ -6,18 +6,24 @@ across both GPU baseline (Transformers) and AirLLM (4-bit paged) inference modes
 all three prompts, and writes results to results/metrics_medium.json.
 
 Per docs/PRD.md (medium tier is a "good AirLLM comparison target").
+
+Routes results and charts through ResultWriter and Visualizer (the
+same pattern used by run_llamacpp_benchmark.py) instead of hand-rolling
+serialization, resolving docs/TODO.md tasks 10.2/10.3.
 """
 
 from __future__ import annotations
 
-import json
 import sys
-from dataclasses import asdict
 from pathlib import Path
 
 from airllm_benchmark.sdk.sdk import BenchmarkSDK
 from airllm_benchmark.services.metrics_helpers import MetricsRecord
+from airllm_benchmark.services.result_writer import ResultWriter
+from airllm_benchmark.services.visualizer import Visualizer
 from airllm_benchmark.shared.config import load_experiment
+
+ASSETS_DIR = Path("assets") / "medium"
 
 
 def main() -> int:
@@ -36,7 +42,8 @@ def main() -> int:
 
     # Setup output file.
     output_path = Path("results") / "metrics_medium.json"
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    writer = ResultWriter(str(output_path))
+    writer.clear()
 
     # Load config (real, not smoke).
     config = load_experiment()
@@ -56,6 +63,7 @@ def main() -> int:
                 prompt=prompt_text,
                 quantization="none",
             )
+            writer.append(record)
             results.append(record)
             print(
                 f"  ✓ {record.tokens_generated} tokens "
@@ -65,10 +73,10 @@ def main() -> int:
         except Exception as e:
             print(f"  ✗ {type(e).__name__}: {str(e)[:80]}")
 
-    # Write results to JSON.
-    output_dict = [asdict(r) for r in results]
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(output_dict, f, indent=2)
+    if results:
+        visualizer = Visualizer()
+        chart_paths = visualizer.generate_all(results, str(ASSETS_DIR))
+        print(f"Charts written: {', '.join(chart_paths)}")
 
     print(f"\nMedium-tier GPU baseline complete: {len(results)}/3 runs "
           f"→ {output_path}")
