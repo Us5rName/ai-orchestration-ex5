@@ -6,17 +6,24 @@ over the GPU baseline (small model tier only) and writes results to
 results/metrics_sweep.json.
 
 Per docs/TODO.md task 9.7 (parameter sweep integration).
+
+Routes results and charts through ResultWriter and Visualizer (the
+same pattern used by run_llamacpp_benchmark.py) instead of hand-rolling
+serialization, resolving docs/TODO.md tasks 10.2/10.3.
 """
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
 from airllm_benchmark.sdk.sdk import BenchmarkSDK
 from airllm_benchmark.services.metrics_helpers import MetricsRecord
+from airllm_benchmark.services.result_writer import ResultWriter
+from airllm_benchmark.services.visualizer import Visualizer
 from airllm_benchmark.shared.config import load_experiment
+
+ASSETS_DIR = Path("assets") / "sweep"
 
 
 def main() -> int:
@@ -33,7 +40,8 @@ def main() -> int:
 
     # Setup output file
     output_path = Path("results") / "metrics_sweep.json"
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    writer = ResultWriter(str(output_path))
+    writer.clear()
 
     # Load config to resolve prompt text
     config = load_experiment(Path("config") / "smoke")
@@ -66,6 +74,7 @@ def main() -> int:
                         quantization=quant,
                         max_new_tokens=max_tokens,
                     )
+                    writer.append(record)
                     results.append(record)
                     print(
                         f"  ✓ {record.tokens_generated} tokens "
@@ -76,20 +85,13 @@ def main() -> int:
                     print(f"  ✗ Error: {type(e).__name__}: {str(e)[:80]}")
                     print("  Skipping this combination due to error")
 
-    # Write results to JSON
-    output_dict = [_record_to_dict(r) for r in results]
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(output_dict, f, indent=2)
+    if results:
+        visualizer = Visualizer()
+        chart_paths = visualizer.generate_all(results, str(ASSETS_DIR))
+        print(f"Charts written: {', '.join(chart_paths)}")
 
     print(f"\nSweep complete: {len(results)} runs written to {output_path}")
     return 0
-
-
-def _record_to_dict(record: MetricsRecord) -> dict:
-    """Convert MetricsRecord to dict for JSON serialization."""
-    from dataclasses import asdict
-
-    return asdict(record)
 
 
 if __name__ == "__main__":

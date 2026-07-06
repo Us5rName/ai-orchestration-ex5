@@ -1,6 +1,6 @@
 [
   {
-    "run_id": "run_7ff94383dc10",
+    "run_id": "run_7fc6d0d0c1a0",
     "model": "Qwen/Qwen2.5-3B-Instruct",
     "mode": "gpu_provider",
     "provider": "transformers",
@@ -8,19 +8,19 @@
     "prompt_id": "",
     "quantization": "none",
     "max_new_tokens": 32,
-    "load_time_s": 1.3945,
-    "ttft_s": 4.605,
-    "total_runtime_s": 6.3736,
+    "load_time_s": 6.7605,
+    "ttft_s": 0.357,
+    "total_runtime_s": 11.4097,
     "tokens_generated": 32,
-    "generation_throughput": 18.09,
-    "peak_ram_mb": 1589.84,
+    "generation_throughput": 29.64,
+    "peak_ram_mb": 3959.67,
     "peak_vram_mb": 6011.3,
     "status": "success",
     "error": "",
-    "timestamp": "2026-07-05T16:43:30.522070+00:00"
+    "timestamp": "2026-07-06T00:01:59.985587+00:00"
   },
   {
-    "run_id": "run_7ff8cb95dac0",
+    "run_id": "run_7fc65890f3b0",
     "model": "Qwen/Qwen2.5-3B-Instruct",
     "mode": "gpu_provider",
     "provider": "transformers",
@@ -28,19 +28,19 @@
     "prompt_id": "",
     "quantization": "none",
     "max_new_tokens": 32,
-    "load_time_s": 1.2843,
-    "ttft_s": 3.8081,
-    "total_runtime_s": 5.028,
+    "load_time_s": 0.6557,
+    "ttft_s": 0.0255,
+    "total_runtime_s": 3.7883,
     "tokens_generated": 32,
-    "generation_throughput": 26.23,
-    "peak_ram_mb": 4590.56,
+    "generation_throughput": 44.74,
+    "peak_ram_mb": 3301.49,
     "peak_vram_mb": 6011.34,
     "status": "success",
     "error": "",
-    "timestamp": "2026-07-05T16:43:36.001356+00:00"
+    "timestamp": "2026-07-06T00:02:04.259507+00:00"
   },
   {
-    "run_id": "run_7ff93179ad20",
+    "run_id": "run_7fc6dd64a5d0",
     "model": "Qwen/Qwen2.5-3B-Instruct",
     "mode": "gpu_provider",
     "provider": "transformers",
@@ -48,15 +48,15 @@
     "prompt_id": "",
     "quantization": "none",
     "max_new_tokens": 32,
-    "load_time_s": 1.1793,
-    "ttft_s": 3.7222,
-    "total_runtime_s": 5.0,
+    "load_time_s": 0.6648,
+    "ttft_s": 0.0255,
+    "total_runtime_s": 3.8077,
     "tokens_generated": 32,
-    "generation_throughput": 25.04,
-    "peak_ram_mb": 4556.32,
+    "generation_throughput": 44.27,
+    "peak_ram_mb": 3167.42,
     "peak_vram_mb": 6011.3,
     "status": "success",
     "error": "",
-    "timestamp": "2026-07-05T16:43:41.455114+00:00"
+    "timestamp": "2026-07-06T00:02:08.533187+00:00"
   }
 ]
