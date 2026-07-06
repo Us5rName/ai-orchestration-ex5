@@ -555,3 +555,39 @@ in `services/report_chart_core.py`; tier/grouping lookups are in
 | V5 | `render_prompt_sensitivity_chart` | Line chart, `total_runtime_s` by prompt_id, one line per (model, mode). |
 | V6 | `render_memory_vs_throughput_scatter` | Scatter, `peak_ram_mb` vs `generation_throughput` (successful runs only). |
 | V7 | `render_vram_vs_throughput_scatter` | Scatter, `peak_vram_mb` vs `generation_throughput` (successful runs only). |
+
+---
+
+## 12. Cache Check — `shared/cache_check.py`
+
+Informational-only HuggingFace local cache inspection. Per docs/TODO.md
+task 7.4: reports whether configured models are already present in
+`~/.cache/huggingface` so a benchmark run can be planned without
+triggering a download. Never downloads or modifies the cache — reads
+existing `huggingface_hub.scan_cache_dir()` metadata only. Consumed by
+`BenchmarkSDK.validate()` (the `--validate` dry-run CLI path) via
+`sdk/sdk_validation.py::run_validation()`, which stores the result in
+`ValidationResult.models_cached` (§10).
+
+```python
+def model_cache_status(model_ids: list[str]) -> dict[str, bool]:
+    """Return whether each of *model_ids* is present in the local HF cache.
+
+    Args:
+        model_ids: HuggingFace model identifiers to check
+            (e.g. "Qwen/Qwen2.5-0.5B-Instruct").
+
+    Returns:
+        Dict mapping each model_id to True if at least one revision is
+        cached locally, False otherwise (including if the cache scan
+        itself fails, e.g. no cache directory exists yet).
+    """
+```
+
+| Parameter | Type | Description |
+|-----------|------|--------------|
+| `model_ids` | list[str] | HuggingFace model identifiers to check. |
+
+| Return | Type | Description |
+|--------|------|--------------|
+| (dict) | dict[str, bool] | Maps each input `model_id` to `True`/`False` cache presence. Any scan failure (e.g. no cache directory) yields `False` for all ids — never raises. |
